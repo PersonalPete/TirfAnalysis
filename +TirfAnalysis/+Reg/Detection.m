@@ -4,7 +4,7 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
         % roughly the spot size
         DFT_PEAK_FAC = 0.05 % peaks are >5% higher than background
         DFT_KERNEL_FAC = 2 % kernel size and background are this many times
-                           % the blurring sigma
+        % the blurring sigma
         % image fitting upper and lower bounds
         DFT_IMSIG_MIN = 0.5
         DFT_IMSIG_MAX = 3
@@ -29,23 +29,30 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
                 kFac = TirfAnalysis.Reg.Detection.DFT_KERNEL_FAC;
             end
             % apply a gaussian blur for noise filtering
-            blurData = ...
-                imfilter(data,...
-                fspecial('Gaussian',ceil(kFac*sig),sig),...
-                'replicate');
-            
-            % if we are using peakFac as a fraction then normalise between 
+            if sig == 0
+                blurData = data;
+            else
+                blurData = ...
+                    imfilter(data,...
+                    fspecial('Gaussian',ceil(kFac*sig),sig),...
+                    'replicate');
+            end
+            % if we are using peakFac as a fraction then normalise between
             % zero and one
             % otherwise, just use blurData as it is
             if peakFac < 1
-            normData = ...
-                (blurData - min(blurData(:)))...
-                ./(max(blurData(:)) - min(blurData(:)));
+                normData = ...
+                    (blurData - min(blurData(:)))...
+                    ./(max(blurData(:)) - min(blurData(:)));
             else
                 normData = blurData;
             end
             % compare each pixel to the background around it
             bgdRad = ceil(kFac*sig); % where we look for our background
+            
+            if bgdRad == 0
+                bgdRad = kFac;
+            end
             
             peakArray = zeros(size(data));
             
@@ -55,7 +62,7 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
             kernelBgd(:,[1 end]) = 1;
             kernelBgd = kernelBgd./sum(kernelBgd(:));
             
-            meanBgdArray = conv2(normData,kernelBgd,'same');            
+            meanBgdArray = conv2(normData,kernelBgd,'same');
             
             for iPx = 1+bgdRad:size(normData,1)-bgdRad
                 for jPx = 1+bgdRad:size(normData,2)-bgdRad
@@ -64,26 +71,26 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
                     % ------- Without convolution --------
                     % work out which pixels are to be considered for the
                     % background
-%                     bgdIndexes = [[(iPx - bgdRad):(iPx+bgdRad),...
-%                         (iPx+bgdRad)*ones(1,2*bgdRad-1),...
-%                         (iPx+bgdRad):-1:(iPx-bgdRad),...
-%                         (iPx-bgdRad)*ones(1,2*bgdRad-1)]',...
-%                         [(jPx+bgdRad)*ones(1,2*bgdRad+1),...
-%                         (jPx+bgdRad-1):-1:(jPx-bgdRad+1),...
-%                         (jPx-bgdRad)*ones(1,2*bgdRad+1),...
-%                         (jPx-bgdRad+1):(jPx+bgdRad-1)]'];
+                    %                     bgdIndexes = [[(iPx - bgdRad):(iPx+bgdRad),...
+                    %                         (iPx+bgdRad)*ones(1,2*bgdRad-1),...
+                    %                         (iPx+bgdRad):-1:(iPx-bgdRad),...
+                    %                         (iPx-bgdRad)*ones(1,2*bgdRad-1)]',...
+                    %                         [(jPx+bgdRad)*ones(1,2*bgdRad+1),...
+                    %                         (jPx+bgdRad-1):-1:(jPx-bgdRad+1),...
+                    %                         (jPx-bgdRad)*ones(1,2*bgdRad+1),...
+                    %                         (jPx-bgdRad+1):(jPx+bgdRad-1)]'];
                     
                     % index with a single index into the data
-%                     bgdIndexes = ...
-%                         (bgdIndexes(:,2) - 1) * size(normData,1) ...
-%                         + bgdIndexes(:,1);
+                    %                     bgdIndexes = ...
+                    %                         (bgdIndexes(:,2) - 1) * size(normData,1) ...
+                    %                         + bgdIndexes(:,1);
                     % work out the mean of the background pixels
-%                     meanBgd = mean(normData(bgdIndexes));
+                    %                     meanBgd = mean(normData(bgdIndexes));
                     
                     % ------- With convolution ----------
                     % use convolution background
                     meanBgd = meanBgdArray(iPx,jPx);
-
+                    
                     neighbours = ...
                         normData(iPx-bgdRad:iPx+bgdRad,jPx-bgdRad:jPx+bgdRad);
                     neighbours(bgdRad+1,bgdRad+1) = 0;
@@ -185,19 +192,19 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
                     % simple transform (with no arg checking)
                     u = movingPoints(iPoint,1);
                     v = movingPoints(iPoint,2);
-                   
+                    
                     x = M(1,1).*u + M(2,1).*v + M(3,1);
                     y = M(1,2).*u + M(2,2).*v + M(3,2);
                     z = M(1,3).*u + M(2,3).*v + M(3,3);
                     
                     transformedPoints(iPoint,1:2) = [x./z, y./z];
                     % ---- original method using tform.transform.... -----
-%                     [xPoint, yPoint] = ...
-%                         tformObj.transformPointsForward(...
-%                         movingPoints(iPoint,1),movingPoints(iPoint,2));
-%                     transformedPoints(iPoint,1:2) = [xPoint, yPoint];
+                    %                     [xPoint, yPoint] = ...
+                    %                         tformObj.transformPointsForward(...
+                    %                         movingPoints(iPoint,1),movingPoints(iPoint,2));
+                    %                     transformedPoints(iPoint,1:2) = [xPoint, yPoint];
                 end
-                transformedPoints = transformedPoints(:,1:2); % strip out the ones                
+                transformedPoints = transformedPoints(:,1:2); % strip out the ones
                 costForPoints = ...
                     nCostFun(transformedPoints,staticPoints,sigCost);
                 
@@ -297,7 +304,7 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
                 nirDist(iRedPeak) = ...
                     min(hypot(xNirInRed-xPosRed,yNirInRed-yPosRed));
             end
-             
+            
             % construct the TformInfo3 object
             tformInfo3 = ...
                 TirfAnalysis.Reg.TformInfo3(...

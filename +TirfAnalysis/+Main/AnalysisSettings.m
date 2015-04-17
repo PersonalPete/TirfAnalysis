@@ -9,9 +9,11 @@ classdef AnalysisSettings % a value class...
         LinkRadius % how far away (in px) can linkings between channels be
         
         LinkBoolFun % link = linkBoolFun(DD,DT,DA,TT,TA,AA) % see MainModel
+        NearNeighLim % at what distance two localisations are discarded for
+                  % being to close to each other
         
         FilteringEllip % [greenEllip; redEllip,; nirEllip] (min ellipticity)
-        FilteringWid % [greenMin, greenMax; redMin; redMax; nirMin, nirMax]
+        FilteringWid % [min, max]
         
         % algorithm settings
         FixedPos
@@ -19,8 +21,8 @@ classdef AnalysisSettings % a value class...
         Ellipse
         
         % algorithm limits
-        PosLim % [greenPosChangeMax; redPosChangeMax; nirPosChangeMax]
-        WidLim % [greenWidMin, greenWidMax; redWidMin ...]
+        PosLim % [min max]
+        WidLim % [min max]
     end
     methods (Access = public)
         function obj = AnalysisSettings(...
@@ -31,6 +33,7 @@ classdef AnalysisSettings % a value class...
                 bgdRadiusFac,...
                 linkRadius,...
                 linkBoolFun,...
+                nearNeighLim,...
                 filteringEllip,...
                 filteringWid,...
                 fixedPos,...
@@ -48,6 +51,7 @@ classdef AnalysisSettings % a value class...
             obj.BgdRadiusFac = bgdRadiusFac;
             obj.LinkRadius = linkRadius;
             obj.LinkBoolFun = linkBoolFun;
+            obj.NearNeighLim = nearNeighLim;
             obj.FilteringEllip = filteringEllip;
             obj.FilteringWid = filteringWid;
             
@@ -109,6 +113,13 @@ classdef AnalysisSettings % a value class...
         end
         function obj = setLinkBoolFun(obj,linkBoolFun)
             obj.LinkBoolFun = linkBoolFun;
+        end
+        
+        function nearNeighLim = getNearNeighLim(obj)
+            nearNeighLim = obj.NearNeighLim;
+        end       
+        function obj = setNearNeighLim(obj,nearNeighLim)
+            obj.NearNeighLim = nearNeighLim;
         end
         
         function filteringEllip = getFilteringEllip(obj)

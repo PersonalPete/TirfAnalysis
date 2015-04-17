@@ -19,7 +19,8 @@ classdef ImageDisplay < handle
         CMax = 1 % is the pixel value of the lightest pixel
     end
     properties (Constant, Access = protected)
-        C_SCALE = 0.5;
+        C_SCALE = 0.5
+        C_DELTA_MIN = 20 % minimum color range
     end
     methods (Access = public)
         function obj = ImageDisplay(figH, position)
@@ -61,7 +62,9 @@ classdef ImageDisplay < handle
             end
             if ~isnan(obj.CMax) && ~isnan(obj.CMin) && obj.CMax > obj.CMin
                 set(obj.UnAxes,'CLim',...
-                    [obj.CMin (obj.CMax-obj.CMin)*obj.C_SCALE + obj.CMin]);
+                    [obj.CMin ...
+                    max((obj.CMax-obj.CMin)*obj.C_SCALE + obj.CMin,...
+                    obj.C_DELTA_MIN + obj.CMin)]);
             end
         end
         function setColorLim(obj,cMin,cMax)

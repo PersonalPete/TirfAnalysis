@@ -1,5 +1,5 @@
 classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
-    properties
+    properties (Access = protected)
         
         MovieMetadata % frTime and alexSequence
         AnalysisSettings
@@ -228,35 +228,100 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         % is a matrix of NaNs nyPix x nxPix in dimension
         function frame = getMeanDDFrame(obj)
             frames = obj.getDDFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         function frame = getMeanDTFrame(obj)
             frames = obj.getDTFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         function frame = getMeanDAFrame(obj)
             frames = obj.getDAFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         function frame = getMeanTTFrame(obj)
             frames = obj.getTTFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         function frame = getMeanTAFrame(obj)
             frames = obj.getTAFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         function frame = getMeanAAFrame(obj)
             frames = obj.getAAFrames;
-            frame = mean(frames(:,:,1:obj.AnalysisSettings.getNFrames),3);
+            if isempty(frames)
+                frame = ones(size(frames,1),size(frames,2));
+            else
+                lastFrame = ...
+                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                frame = mean(frames(:,:,1:lastFrame),3);
+            end
         end
         
+        
+        % Getter for the analysis settings
         function analysisSettings = getAnalysisSettings(obj)
             analysisSettings = obj.AnalysisSettings;
         end
         
-        function linkedPos = getLinkedPos(obj)
+        % Getter for the detection results
+        function ddPos = getDdPos(obj)
+            ddPos = obj.DDPositions;
+        end
+        function dtPos = getDtPos(obj)
+            dtPos = obj.DTPositions;
+        end
+        function daPos = getDaPos(obj)
+            daPos = obj.DAPositions;
+        end
+        function ttPos = getTtPos(obj)
+            ttPos = obj.TTPositions;
+        end
+        function taPos = getTaPos(obj)
+            taPos = obj.TAPositions;
+        end
+        function aaPos = getAaPos(obj)
+            aaPos = obj.AAPositions;
+        end
+        
+        function [posGreen, posRed, posNir] = getLinkedPos(obj)
             linkedPos = obj.LinkedPos;
+            
+            tform = obj.AnalysisSettings.getTform3;
+            
+            posGreen = tform.transformR2G(linkedPos);
+            posRed = linkedPos;
+            posNir = tform.transformR2N(linkedPos);
+            
         end
     end
     
@@ -271,6 +336,37 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             ttPos = obj.TTPositions;
             taPos = tform3.transformN2R(obj.TAPositions);
             aaPos = tform3.transformN2R(obj.AAPositions);
+            
+            nearNeighLimSq = (obj.AnalysisSettings.getNearNeighLim()).^2;
+            
+            % check all channels for nearest neighbour distance violations
+            posCell = {ddPos, dtPos, daPos, ttPos, taPos, aaPos};
+            posCellOut = cell(size(posCell));
+            for iChannel = 1:length(posCell)
+                loopPos = ...
+                    [posCell{iChannel}, ones(size(posCell{iChannel},1),1)];
+                % loopPos(:,1) and loopPos(:,2) are positions and
+                % loopPos(:,3) is a logical which is true if we want to
+                % keep this localisation, and false if we don't
+                for iPos = 1:size(loopPos,1)
+                    if (sum(sum(...
+                            bsxfun(@minus,...
+                            loopPos(iPos,1:2),...
+                            loopPos(:,1:2)).^2,2) < nearNeighLimSq) > 1)
+                        % if any are too close to a neighbour
+                        loopPos(iPos,3) = 0;
+                    end
+                end % loop over positions
+                if isempty(loopPos)
+                    goodPos = ones(0,2);
+                else
+                    goodPos = loopPos(logical(loopPos(:,3)),1:2);
+                end
+                posCellOut{iChannel} = goodPos;
+            end % loop over channels (checking nearest neighbour violations
+            
+            [ddPos, dtPos, daPos, ttPos, taPos, aaPos] = ...
+                deal(posCellOut{:});
             
             % the search radius in pixels
             searchRadSq = obj.AnalysisSettings.getLinkRadius^2;
@@ -289,9 +385,9 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             % TA:5, AA:6 and lets us check what channel the clusters are
             % made up of
             
-            foundClusters = cell(500,1); % preallocate to a sufficiently 
-                                         % large size that we don't expect
-                                         % to have to increase its size
+            foundClusters = cell(500,1); % preallocate to a sufficiently
+            % large size that we don't expect
+            % to have to increase its size
             nClusters = 0;
             
             for iPosStart = 1:size(allPos,1) % loop over localisations
@@ -305,7 +401,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                     needsTesting = 1; % needs checking through
                     while needsTesting
                         needsTesting = 0; % escape the loop if we don't
-                                          % add a point to the cluster
+                        % add a point to the cluster
                         for jPosTest = 1:size(allPos,1) % loop over test points
                             if allPos(jPosTest,3) && ...
                                     any(...
@@ -332,21 +428,23 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                                 needsTesting = 1;
                                 % leave the for loop (and restart testing)
                                 continue; % no point in testing later points
-                                          % since we are going to add them
-                                          % again
+                                % since we are going to add them
+                                % again
                             end % if compare whether point is added to cluster
                         end % loop over localisations to test against
                     end
                 end % if the start localisation is available
             end % loop over localisations (starting)
             
-            linkedPos = zeros(500,2); % blank this in case it got set some other way
+            linkedPos = zeros(500,2); % initialise this for speed
+            
+            nKeep = 0;
             
             if nClusters > 0
                 foundClusters = foundClusters(1:nClusters);
                 
                 keepClusters = cell(500,1);
-                nKeep = 0;
+                
                 
                 linkBoolFun = obj.AnalysisSettings.getLinkBoolFun;
                 
@@ -375,15 +473,15 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                             numChan(6))
                         nKeep = nKeep + 1;
                         % store the OK clusters
-                        keepClusters{nKeep} = clusterPos; 
+                        keepClusters{nKeep} = clusterPos;
                         % set the linked position to the mean cluster
                         % positon (in the red channel)
-                        meanPos = mean(clusterPos(:,1:2),1);                       
+                        meanPos = mean(clusterPos(:,1:2),1);
                         linkedPos(nKeep,:) = meanPos;
                     end % check whether correct channels for linking
                     
                 end % loop over found clusters
-            
+                
             end % if (we have found any clusters)
             
             if nKeep > 0

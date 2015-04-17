@@ -35,6 +35,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                 defaults.bgdRadiusFac,...
                 defaults.linkRadius,...
                 defaults.linkBoolFun,...
+                defaults.nearNeighLim,...
                 defaults.filteringEllip,...
                 defaults.filteringWid,...
                 defaults.fixedPos,...
@@ -156,19 +157,23 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         end % setLinkingRadius
         
         % @Override from TirfAnalysis.Main.AbstractMainModel
-        function setFiltering(obj,ellip,wid)
+        function setFiltering(obj,ellip,wid,nearNeighLim)
             % [greenEllip; redEllip,; nirEllip] (min ellipticity)
             % [greenMin, greenMax; redMin; redMax; nirMin, nirMax]
             % ellip is the minimum allowed ellipticity, wid is [minWid maxWid]
             % (in pixels)
-            if isnumeric(ellip) && numel(ellip) == 3 &&...
-                    isnumeric(wid) && all(size(wid) == [3,2]) && ...
-                    all(wid > 0) && all(wid(:,2) > wid(:,1))
+            if isnumeric(ellip) && numel(ellip) == 1 &&...
+                    isnumeric(wid) && all(size(wid) == [1,2]) && ...
+                    all(wid > 0) && all(wid(:,2) > wid(:,1)) && ...
+                    isnumeric(nearNeighLim) && numel(nearNeighLim) == 1
+                nearNeighLim = abs(nearNeighLim);
                 ellip = abs(ellip);
                 obj.AnalysisSettings = ...
                     obj.AnalysisSettings.setFilteringEllip(ellip);
                 obj.AnalysisSettings = ...
                     obj.AnalysisSettings.setFilteringWid(wid);
+                obj.AnalysisSettings = ...
+                    obj.AnalysisSettings.setNearNeighLim(nearNeighLim);
             end
             notify(obj,'ViewNeedsUpdate');
         end % setFiltering
@@ -183,14 +188,14 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             % e.g. linkBoolFun = @(DD,DT,DA,TT,TA,AA) (DD & TT); would link
             % particles which have both a DD and a TT localisation
             if isa(linkBoolFun,'function_handle')
-                if nargin(a) == 6
+                if nargin(linkBoolFun) == 6
                     working = 0;
                     try
                         sizeIn = [5,1];
                         testInput = ones(sizeIn);
                         if all(size(linkBoolFun(...
                                 testInput,testInput,testInput,...
-                                testInput,testInput,testInput) == sizeIn))
+                                testInput,testInput,testInput)) == sizeIn)
                             working = 1;
                         end
                     catch
@@ -252,6 +257,9 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             % analyse the data in the files specified (should accept both a
             % single string specifing a movie to analyse, and a cell array of
             % strings specfiying multiple files)
+            
+            % Probably should allow a no-arg syntax that invokes the file
+            % select dialog
             if ~iscellstr(A)
                 filePaths = {filePaths};
             end

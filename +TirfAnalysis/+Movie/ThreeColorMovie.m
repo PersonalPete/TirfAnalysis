@@ -43,5 +43,8 @@ classdef ThreeColorMovie < handle
             nirFrame = ...
                 obj.TirfMovie.getData(frameNum,obj.NirLimits);
         end
+        function movieInfoString = getMovieInfo(obj)
+            movieInfoString = obj.TirfMovie.getMovieInfo;
+        end
     end
 end

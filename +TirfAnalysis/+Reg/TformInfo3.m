@@ -34,7 +34,7 @@ classdef TformInfo3
             end
             if nargin < 6
                 arg6 = [];
-            end        
+            end
             
             % constructor
             obj.GreenRedT = arg1;
@@ -53,17 +53,22 @@ classdef TformInfo3
             % points = obj.transformG2R(queryPoints)
             % [xPoints, yPoints] = ...
             %    obj.transformG2R(xQueryPoints,yQueryPoints)
-            if nargin == 2
-                xPoints = points(:,1);
-                yPoints = points(:,2);
-                [xOutPoints, yOutPoints] = ...
-                    obj.GreenRedT.transformPointsForward(xPoints,yPoints);
-                outPoints = [xOutPoints,yOutPoints];
+            if isempty(points)
+                outPoints = [];
                 yOutPoints = [];
-            elseif nargin == 3
-                xPoints = points;
-                [outPoints, yOutPoints] = ...
-                    obj.GreenRedT.transformPointsForward(xPoints,yPoints);
+            else
+                if nargin == 2
+                    xPoints = points(:,1);
+                    yPoints = points(:,2);
+                    [xOutPoints, yOutPoints] = ...
+                        obj.GreenRedT.transformPointsForward(xPoints,yPoints);
+                    outPoints = [xOutPoints,yOutPoints];
+                    yOutPoints = [];
+                elseif nargin == 3
+                    xPoints = points;
+                    [outPoints, yOutPoints] = ...
+                        obj.GreenRedT.transformPointsForward(xPoints,yPoints);
+                end
             end
         end
         function [outPoints, yOutPoints] = transformN2R(obj,points,yPoints)
@@ -72,17 +77,22 @@ classdef TformInfo3
             % points = obj.transformG2R(queryPoints)
             % [xPoints, yPoints] = ...
             %    obj.transformG2R(xQueryPoints,yQueryPoints)
-            if nargin == 2
-                xPoints = points(:,1);
-                yPoints = points(:,2);
-                [xOutPoints, yOutPoints] = ...
-                    obj.NirRedT.transformPointsForward(xPoints,yPoints);
-                outPoints = [xOutPoints,yOutPoints];
+            if isempty(points)
+                outPoints = [];
                 yOutPoints = [];
-            elseif nargin == 3
-                xPoints = points;
-                [outPoints, yOutPoints] = ...
-                    obj.GreenRedT.transformPointsForward(xPoints,yPoints);
+            else
+                if nargin == 2
+                    xPoints = points(:,1);
+                    yPoints = points(:,2);
+                    [xOutPoints, yOutPoints] = ...
+                        obj.NirRedT.transformPointsForward(xPoints,yPoints);
+                    outPoints = [xOutPoints,yOutPoints];
+                    yOutPoints = [];
+                elseif nargin == 3
+                    xPoints = points;
+                    [outPoints, yOutPoints] = ...
+                        obj.GreenRedT.transformPointsForward(xPoints,yPoints);
+                end
             end
         end
         
@@ -93,36 +103,46 @@ classdef TformInfo3
             % points = obj.transformG2R(queryPoints)
             % [xPoints, yPoints] = ...
             %    obj.transformG2R(xQueryPoints,yQueryPoints)
-            if nargin == 2
-                xPoints = points(:,1);
-                yPoints = points(:,2);
-                [xOutPoints, yOutPoints] = ...
-                    obj.GreenRedT.transformPointsInverse(xPoints,yPoints);
-                outPoints = [xOutPoints,yOutPoints];
+            if isempty(points)
+                outPoints = [];
                 yOutPoints = [];
-            elseif nargin == 3
-                xPoints = points;
-                [outPoints, yOutPoints] = ...
-                    obj.GreenRedT.transformPointsInverse(xPoints,yPoints);
+            else
+                if nargin == 2
+                    xPoints = points(:,1);
+                    yPoints = points(:,2);
+                    [xOutPoints, yOutPoints] = ...
+                        obj.GreenRedT.transformPointsInverse(xPoints,yPoints);
+                    outPoints = [xOutPoints,yOutPoints];
+                    yOutPoints = [];
+                elseif nargin == 3
+                    xPoints = points;
+                    [outPoints, yOutPoints] = ...
+                        obj.GreenRedT.transformPointsInverse(xPoints,yPoints);
+                end
             end
         end
         function [outPoints, yOutPoints] = transformR2N(obj,points,yPoints)
-            % perform the transform
-            % allows two syntaxes:
-            % points = obj.transformG2R(queryPoints)
-            % [xPoints, yPoints] = ...
-            %    obj.transformG2R(xQueryPoints,yQueryPoints)
-            if nargin == 2
-                xPoints = points(:,1);
-                yPoints = points(:,2);
-                [xOutPoints, yOutPoints] = ...
-                    obj.NirRedT.transformPointsInverse(xPoints,yPoints);
-                outPoints = [xOutPoints,yOutPoints];
+            if isempty(points)
+                outPoints = [];
                 yOutPoints = [];
-            elseif nargin == 3
-                xPoints = points;
-                [outPoints, yOutPoints] = ...
-                    obj.NirRedT.transformPointsInverse(xPoints,yPoints);
+            else
+                % perform the transform
+                % allows two syntaxes:
+                % points = obj.transformG2R(queryPoints)
+                % [xPoints, yPoints] = ...
+                %    obj.transformG2R(xQueryPoints,yQueryPoints)
+                if nargin == 2
+                    xPoints = points(:,1);
+                    yPoints = points(:,2);
+                    [xOutPoints, yOutPoints] = ...
+                        obj.NirRedT.transformPointsInverse(xPoints,yPoints);
+                    outPoints = [xOutPoints,yOutPoints];
+                    yOutPoints = [];
+                elseif nargin == 3
+                    xPoints = points;
+                    [outPoints, yOutPoints] = ...
+                        obj.NirRedT.transformPointsInverse(xPoints,yPoints);
+                end
             end
         end
         

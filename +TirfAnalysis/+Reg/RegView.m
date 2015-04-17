@@ -59,7 +59,7 @@ classdef RegView < handle
             obj.Controller = controller;
             
             % make the main figure
-            obj.FigH = figure('CloseRequestFcn',@(~,~) obj.closeView,...
+            obj.FigH = figure('CloseRequestFcn',@(~,~) obj.delete,...
                 'Color',obj.DFT_COL_BGD,...
                 'Colormap',gray(1e2),...
                 'DockControls','off',...
@@ -226,7 +226,8 @@ classdef RegView < handle
                 'Visible','on');
             
         end
-        function closeView(obj)
+        
+        function delete(obj)
             obj.Controller.delete;
             delete(obj.FigH);
         end

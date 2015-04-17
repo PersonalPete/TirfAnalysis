@@ -47,3 +47,7 @@ Temporary Items
 # ========================
 *.fits
 *.FITS
+
+
+# MATLAB Autosaves
+*.asv
