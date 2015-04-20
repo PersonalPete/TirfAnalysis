@@ -15,6 +15,7 @@ classdef AlgorithmPanel < TirfAnalysis.GuiElements.AbstractPanel
         PosChangeMaxH
         MinFitWidH
         MaxFitWidH
+        WindowRadH
     end
     
     methods (Access = public)
@@ -42,14 +43,16 @@ classdef AlgorithmPanel < TirfAnalysis.GuiElements.AbstractPanel
             obj.PosChangeMaxH = ...
                 obj.addOption(4,{'max pos change'},callback);
             obj.MinFitWidH = ...
-                obj.addOption(5,{'max fit width'},callback);
+                obj.addOption(5,{'min fit width'},callback);
             obj.MaxFitWidH = ...
                 obj.addOption(6,{'max fit width'},callback);
+            obj.WindowRadH = ...
+                obj.addOption(7,{'window radius'},callback);
         end
         
         % getter for the current information in the panel
         function [isFixPos, isFixWid, isEllip,...
-                maxPosChange, minFitWid, maxFitWid]...
+                maxPosChange, minFitWid, maxFitWid, windowRad]...
                 = getAlgorithmInfo(obj)
             isFixPos = obj.FixedPosH.getValue;
             isFixWid = obj.FixedWidH.getValue;
@@ -57,17 +60,19 @@ classdef AlgorithmPanel < TirfAnalysis.GuiElements.AbstractPanel
             maxPosChange = obj.PosChangeMaxH.getValue;
             minFitWid = obj.MinFitWidH.getValue;
             maxFitWid = obj.MaxFitWidH.getValue;
+            windowRad = obj.WindowRadH.getValue;
         end
         
         function setAlgorithmInfo(obj,...
                 isFixPos, isFixWid, isEllip,...
-                maxPosChange, minFitWid, maxFitWid)
+                maxPosChange, minFitWid, maxFitWid,windowRad)
             obj.FixedPosH.setValue(isFixPos);
             obj.FixedWidH.setValue(isFixWid);
             obj.EllipseH.setValue(isEllip);
             obj.PosChangeMaxH.setValue(maxPosChange);
             obj.MinFitWidH.setValue(minFitWid);
             obj.MaxFitWidH.setValue(maxFitWid);
+            obj.WindowRadH.setValue(windowRad);
         end
         
     end

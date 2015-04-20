@@ -20,6 +20,8 @@ classdef AnalysisSettings % a value class...
         FixedWid
         Ellipse
         
+        WindowRad  % extraction area radius
+        
         % algorithm limits
         PosLim % [min max]
         WidLim % [min max]
@@ -40,7 +42,8 @@ classdef AnalysisSettings % a value class...
                 fixedWid,...
                 ellipse,...
                 posLim,...
-                widLim)
+                widLim,...
+                windowRad)
             % constructor
             
             % detection settings
@@ -63,6 +66,8 @@ classdef AnalysisSettings % a value class...
             % algorithm limits
             obj.PosLim = posLim;
             obj.WidLim = widLim;
+            
+            obj.WindowRad = windowRad;
         end
         
         %% Getters and setters N.B. setters return a new instance of the class
@@ -156,6 +161,13 @@ classdef AnalysisSettings % a value class...
         end
         function obj = setEllipse(obj,ellipse)
             obj.Ellipse = ellipse;
+        end
+        
+        function windowRad = getWindowRad(obj)
+            windowRad = obj.WindowRad;
+        end
+        function obj = setWindowRad(obj,windowRad)
+            obj.WindowRad = windowRad;
         end
         
         % algorithm limits

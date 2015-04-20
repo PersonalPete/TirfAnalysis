@@ -12,6 +12,10 @@ classdef MainView < handle
         TformLoadH
         MovieLoadH
         DisplayH
+        SetLoadH
+        SetSaveH
+        % Status indicator
+        StatH
         
         % button that tells the model to run
         RunH
@@ -40,17 +44,24 @@ classdef MainView < handle
         DFT_COL_CON  = [0.8 0.0 0.0]
         DFT_COL_DONE = [0.0 0.8 0.0]
         
+        SIZ_STAT_TXT = 0.75;
+        
         % positions of things within the figure
         
-        POS_IM = [0.025 0.25 0.950 0.725]
+        POS_IM = [0.025 0.2375 0.950 0.75]
         
         POS_DET = [0.025 0.025 0.145 0.20]
         POS_LIN = [0.175 0.025 0.145 0.20]
         POS_ALG = [0.325 0.025 0.145 0.20]
         
-        POS_LOAD_TFORM = [0.500 0.160 0.125 0.040]
-        POS_LOAD_MOVIE = [0.500 0.100 0.125 0.040]
-        POS_UPDA_DISPL = [0.500 0.040 0.125 0.040]
+        POS_LOAD_TFORM = [0.500 0.125 0.100 0.040]
+        POS_LOAD_MOVIE = [0.600 0.125 0.100 0.040]
+        POS_UPDA_DISPL = [0.500 0.025 0.200 0.040]
+        
+        POS_LOAD_SET = [0.500 0.075 0.100 0.040]
+        POS_SAVE_SET = [0.600 0.075 0.100 0.040]
+        
+        POS_STAT = [0.500 0.185 0.200 0.040]
         
     end
     
@@ -68,12 +79,15 @@ classdef MainView < handle
             
             runModel = callbacks{5};
             
+            loadSettings = callbacks{6};
+            saveSettings = callbacks{7};
+            
             % make the main figure
             obj.FigH = figure('CloseRequestFcn',@(~,~) obj.delete,...
                 'Color',obj.DFT_COL_BGD,...
                 'Colormap',gray(1e2),...
                 'DockControls','off',...
-                'Name','Image Registration',...
+                'Name','Three Color TIRF Analysis',...
                 'Units','Normalized',...
                 'OuterPosition',obj.DFT_POS,...
                 'Defaultuicontrolunits','Normalized',...
@@ -113,9 +127,44 @@ classdef MainView < handle
                 obj.buildButton(obj.POS_UPDA_DISPL,'Update Display',...
                 updateDisplay);
             
+            obj.SetLoadH = ...
+                obj.buildButton(obj.POS_LOAD_SET,'Load Settings',...
+                loadSettings);
+            obj.SetSaveH = ...
+                obj.buildButton(obj.POS_SAVE_SET,'Save Settings',...
+                saveSettings);
+            
+            % make the status indicator
+            
+            obj.StatH = ...
+                uicontrol('Parent',obj.FigH,...
+                'Style','text',...
+                'Position',obj.POS_STAT,...
+                'FontSize',obj.SIZ_STAT_TXT,...
+                'String','Ready',...
+                'BackgroundColor',obj.DFT_COL_RDY,...
+                'ForegroundColor',obj.COL_STR_TXT);
+            
         end
         
         % setter for analysis settings
+        function updateStatus(obj,stat)
+            if stat == 1
+                set(obj.StatH,'BackgroundColor',obj.DFT_COL_DONE,...
+                    'String','Done');
+            elseif stat == -1 % configuration not complete
+                set(obj.StatH,'BackgroundColor',obj.DFT_COL_CON,...
+                    'String','Configure');
+            elseif stat == -2 % busy
+                set(obj.StatH,'BackgroundColor',obj.DFT_COL_CON,...
+                    'String','Busy');
+            else% i.e. stat == 0
+                set(obj.StatH,'BackgroundColor',obj.DFT_COL_RDY,...
+                    'String','Ready');
+            end
+            drawnow;
+        end
+        
         function setDisplaySettings(obj,analysisSettings)
             
             % detection settings
@@ -161,17 +210,18 @@ classdef MainView < handle
             minFitWid = min(fitWid);
             maxFitWid = max(fitWid);
             
+            windowRad = analysisSettings.getWindowRad;
             
             obj.AlgorithmH.setAlgorithmInfo(...
                 isFixPos, isFixWid, isEllip,...
-                maxPosChange, minFitWid, maxFitWid);
+                maxPosChange, minFitWid, maxFitWid,windowRad);
             
         end
         
         function [nFrames,kernel,radFac,greThresh,redThresh,nirThresh,...
                 linkRad,nearNeighRad,minEllip,minWid,maxWid,linkFun,...
                 isFixPos,isFixWid,isEllip,maxPosChange,minFitWid,...
-                maxFitWid] = ...
+                maxFitWid,windowRad] = ...
                 getDisplaySettings(obj)
             
             [nFrames,kernel,radFac,greThresh,redThresh,nirThresh] = ...
@@ -181,7 +231,7 @@ classdef MainView < handle
                 = obj.LinkingH.getLinkingInfo;
             
             [isFixPos, isFixWid, isEllip,...
-                maxPosChange, minFitWid, maxFitWid]...
+                maxPosChange, minFitWid, maxFitWid,windowRad]...
                 = obj.AlgorithmH.getAlgorithmInfo;
         end
         

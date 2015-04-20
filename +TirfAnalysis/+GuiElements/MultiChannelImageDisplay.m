@@ -14,7 +14,8 @@ classdef MultiChannelImageDisplay < handle
     
     properties (Constant, Access = protected)
         DFT_XSPACING = 0.1
-        DFT_INFO_FRAC = 0.05;
+        DFT_INFO_FRAC = 0.075;
+        DFT_GAP_FRAC = 0.025;
         
         DFT_D_COL = [0.0 0.8 0.0]
         DFT_T_COL = [0.8 0.0 0.0]
@@ -69,18 +70,20 @@ classdef MultiChannelImageDisplay < handle
             
             % build the information boxes
             
+            yGap = obj.DFT_GAP_FRAC * pos(4);
+            
             ddPosInf = [xMin + 0*(xStep + xSpace), ...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             dtPosInf = [xMin + 1*(xStep + xSpace),...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             daPosInf = [xMin + 2*(xStep + xSpace),...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             ttPosInf = [xMin + 3*(xStep + xSpace),...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             taPosInf = [xMin + 4*(xStep + xSpace),...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             aaPosInf = [xMin + 5*(xStep + xSpace),...
-                pos(2) + ySpace, xStep, yRem];
+                pos(2) + ySpace + yGap, xStep, yRem - yGap];
             
             d = obj.DFT_D_COL;
             t = obj.DFT_T_COL;

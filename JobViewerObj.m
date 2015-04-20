@@ -18,6 +18,21 @@ classdef JobViewerObj < handle
             savePath = obj.SavePath;
             % save(obj.SavePath,'randomData');
         end
+       
+    end
+    
+    methods (Static)
+        function [randomData,savePath,loadData] = ...
+                generateRandomStatic(sigma,nPoints,savePath)
+            jvO = JobViewerObj(sigma,nPoints,savePath);
+            [randomData, savePath] = jvO.generateRandom;
+            
+            % test whether we can load stuff
+            loadData = load(fullfile('F:\Current Work\New Microscope\ImageAnalysis\TestBed\TirfAnalysis','NIRdet.set3.mat'));
+            rng('shuffle');
+            pause(20*rand);
+            save(savePath,'randomData');
+        end
     end
 end
            

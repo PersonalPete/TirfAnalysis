@@ -17,7 +17,7 @@ classdef (Abstract) AbstractPanel < handle
         
         DFT_SPACE_FAC = 1
         
-        N_ROW = 7
+        N_ROW = 8
         
     end
     
