@@ -3,6 +3,7 @@ classdef MainController < handle
         Model
         View
         ModelSettingsChangedListener
+        RunningStatusListener
     end
     
     methods (Access = public)
@@ -25,7 +26,7 @@ classdef MainController < handle
             % updateDisplay (button pushed)
             callbacks{4} = @(~,~)obj.updateViewImages;
             % run model
-            callbacks{5} = '';
+            callbacks{5} = @(~,~)obj.runModelWrapper;
             % load settings
             callbacks{6} = @(~,~)obj.Model.loadSettings;
             % save settings
@@ -39,9 +40,24 @@ classdef MainController < handle
                 event.listener(obj.Model,'ViewNeedsUpdate',...
                 @(~,~)obj.updateDisplaySettings);
             
+            
+            obj.RunningStatusListener = ...
+                event.listener(obj.Model,'JobStatusChanged',...
+                @(~,~)obj.updateRunStatus);
+            
             % initialise the view
             obj.updateDisplaySettings;
             
+        end
+        
+        function runModelWrapper(obj)
+            obj.View.updateStatus(-2)
+            success = obj.Model.runAnalysis;
+            if success
+                obj.View.updateStatus(1); % done
+            else
+                obj.View.updateStatus(-1); % configure
+            end
         end
         
         function loadMovieWrapper(obj)
@@ -60,7 +76,7 @@ classdef MainController < handle
                 % i.e. maybe we haven't loaded a movie or Tform yet
                 obj.View.updateStatus(-1); % configure
             end
-            obj.View.updateStatus(0);
+            obj.View.updateStatus(1);
         end
         
         function updateDisplaySettings(obj)
@@ -69,6 +85,12 @@ classdef MainController < handle
             obj.View.updateStatus(-2); % busy
             obj.View.setDisplaySettings(obj.Model.getAnalysisSettings);
             obj.View.updateStatus(0);
+        end
+        
+        function updateRunStatus(obj)
+            [nPend,nRun,nFin,nFail] ...
+                = obj.Model.getJobStatus;
+            obj.View.setRunningStatus(nPend,nRun,nFin,nFail);
         end
         
         function viewSettingsChanged(obj)
@@ -91,6 +113,10 @@ classdef MainController < handle
                 obj.Model.setAlgorithmLimits(...
                     maxPosChange,[minFitWid,maxFitWid]);          
                 obj.Model.setWindowRad(windowRad);
+        end
+        
+        function delete(obj)
+            delete(obj.Model);
         end
     end
     

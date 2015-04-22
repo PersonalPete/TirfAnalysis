@@ -17,7 +17,7 @@ classdef MainView < handle
         % Status indicator
         StatH
         
-        % button that tells the model to run
+        % panel for running
         RunH
         
         Controller % Just so we can delete the controller when the fig close
@@ -63,6 +63,7 @@ classdef MainView < handle
         
         POS_STAT = [0.500 0.185 0.200 0.040]
         
+        RUN_PANEL_POS = [0.725 0.025 0.25 0.18]
     end
     
     methods (Access = public)
@@ -145,6 +146,10 @@ classdef MainView < handle
                 'BackgroundColor',obj.DFT_COL_RDY,...
                 'ForegroundColor',obj.COL_STR_TXT);
             
+            % make the running panel
+            obj.RunH = TirfAnalysis.GuiElements.RunInfo(obj.FigH,...
+                obj.RUN_PANEL_POS,runModel);
+            
         end
         
         % setter for analysis settings
@@ -215,7 +220,7 @@ classdef MainView < handle
             obj.AlgorithmH.setAlgorithmInfo(...
                 isFixPos, isFixWid, isEllip,...
                 maxPosChange, minFitWid, maxFitWid,windowRad);
-            
+                       
         end
         
         function [nFrames,kernel,radFac,greThresh,redThresh,nirThresh,...
@@ -238,6 +243,10 @@ classdef MainView < handle
         % setter for image data
         function setDisplayImage(obj,analysisMovie)
             obj.DispImH.updateDisplay(analysisMovie)
+        end
+        
+        function setRunningStatus(obj,nPend,nRun,nFin,nFail)
+            obj.RunH.setDisplay(nPend,nRun,nFin,nFail);
         end
         
         function delete(obj)

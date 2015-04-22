@@ -6,15 +6,30 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         AnalysisSettings
         IsTransformLoaded = 0
         IsMovieLoaded = 0
+        
+        % properties for the parallel analysis
+        ParCluster
+        Jobs
+        LastStatus
+        StatusTimer
     end
     
     properties (Constant = true)
         % where we store the default values for analysis settings
         DFT_PATH = '+TirfAnalysis\+Defaults\Current.mat'
+        % parallel cluster profile
+        DFT_PROFILE = 'local'
+        % timer period (for checking status of parcluster jobs)
+        DFT_TIMER_PERIOD = 1 
+        
+        VERBOSE = 1
+        
+        ANALYSIS_FOLDER = 'tirf3Analysis'
     end
     
     events
         ViewNeedsUpdate
+        JobStatusChanged
     end
     
     methods (Access = public)
@@ -45,6 +60,15 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                 defaults.widLim,...
                 defaults.windowRad);
             
+            % startup the parallel cluster
+            obj.ParCluster = parcluster(obj.DFT_PROFILE);
+            
+            obj.StatusTimer = timer('BusyMode','drop',...
+                'ExecutionMode','fixedSpacing',...
+                'Period',obj.DFT_TIMER_PERIOD,...
+                'TimerFcn',@obj.checkJobStatus);
+            start(obj.StatusTimer);
+            
         end % constructor
         
         
@@ -70,46 +94,23 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             success = 0;
             if obj.IsTransformLoaded
                 [file, path] = uigetfile('*.fits;*.FITS','Load Movie');
-                if ~isempty(file) && ~all(file == 0)
-                    fullPath = fullfile(path,file);
-                    fitsMovie = TirfAnalysis.Movie.FitsMovie(fullPath);
-                    [nxPix, nyPix] = fitsMovie.getNPix;
-                    % check if the movie is suitable for our transform
-                    if obj.AnalysisSettings.getGreenLimits(2) ...
-                            <= nxPix && ...
-                            obj.AnalysisSettings.getGreenLimits(4) ...
-                            <= nyPix && ...
-                            obj.AnalysisSettings.getRedLimits(2) ...
-                            <= nxPix && ...
-                            obj.AnalysisSettings.getRedLimits(4) ...
-                            <= nyPix && ...
-                            obj.AnalysisSettings.getNirLimits(2) ...
-                            <= nxPix && ...
-                            obj.AnalysisSettings.getNirLimits(4) ...
-                            <= nyPix
-                        % if the movie is large enough for the channel
-                        % limits
-                        metadataLoaded = 0;
-                        try
-                            movieMetadata = ...
-                                load(fullfile(path,[file(1:end-4) 'mat']));                            
-                        catch
-                            warning('Problem loading movie metadata');
-                        end
-                        if (isfield(movieMetadata,'frTime') && ...
-                                isfield(movieMetadata,'alexSequence') && ...
-                                size(movieMetadata.alexSequence,1) == 3)
-                            obj.MovieMetadata = movieMetadata;
-                            metadataLoaded = 1;
-                        end
-                        if metadataLoaded
-                            obj.CurrentMovie = fitsMovie;
-                            obj.IsMovieLoaded = 1;
-                            success = 1;
-                        end
-                    end % if the movie is big enough for the tform3
-                end % if the file selected is 'real'
+                
+                import TirfAnalysis.Main.AnalysisMovie
+                
+                % check if the movie has metadata and matches the transform
+                [ok, fitsMovie, metadata] = ...
+                    AnalysisMovie.checkIfOk(...
+                    path,file,obj.AnalysisSettings);
+          
             end % if we have a transform loaded
+            
+            if ok
+                obj.CurrentMovie = fitsMovie;
+                obj.MovieMetadata = metadata;
+                obj.IsMovieLoaded = 1;
+                success = 1;
+            end
+            
             notify(obj,'ViewNeedsUpdate');
         end % loadDisplayMovie
         
@@ -277,15 +278,54 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         end
         
         % @Override from TirfAnalysis.Main.AbstractMainModel
-        function runAnalysis(obj)
-            % analyse the data in the files specified (should accept both a
-            % single string specifing a movie to analyse, and a cell array of
-            % strings specfiying multiple files)           
-            % TODO - WRITE THE ANALYSIS CODE THAT ACTUALLY RUNS...
-            
-            
-            
-            
+        function success = runAnalysis(obj)
+            % analyse the data in the files specified
+            % success indicates that we at least initiated the analysis
+            success = 0;
+            if obj.IsTransformLoaded
+                % use the userinterface for file loading
+                [file, loadPath] = uigetfile('*.fits;*.FITS','Load Movie',...
+                    'Multiselect','on');
+                if ~isempty(file) && ~all(file == 0)
+                    % make sure it is always a cell
+                    if ~iscell(file)
+                        file = {file};
+                    end
+                    
+                    % make a folder to save the output into - mangle its
+                    % name with the current time so that multiple runs land
+                    % in different folders
+                    c = clock;
+                    saveFolderName = [obj.ANALYSIS_FOLDER, ...
+                        sprintf('%i%02i%02i%02i%02i_%.0f',c)];
+                    folderSuccess = mkdir(loadPath,saveFolderName);
+                    
+                    % if the folder is successfully created
+                    if folderSuccess
+                        savePath = fullfile(loadPath,saveFolderName);                    
+                        nJobs = length(obj.Jobs);
+                        for iMovie = 1:length(file)
+                            % allocate storage for the job object
+                            if nJobs == 0 % if it is the first job
+                                obj.Jobs = obj.ParCluster.createJob;
+                            else
+                                obj.Jobs(nJobs + iMovie) = obj.ParCluster.createJob;
+                            end
+                            % create the task of analysing a particular file
+                            obj.Jobs(nJobs + iMovie).createTask(...
+                                @TirfAnalysis.Fitting.AnalysisEngine.analyseMovie,...
+                                1,...
+                                {obj.AnalysisSettings,...
+                                loadPath,...
+                                file{iMovie},...
+                                savePath});
+                            % submit the job to the cluster
+                            obj.Jobs(nJobs + iMovie).submit;
+                        end
+                        success = 1;
+                    end % if the folder to save to can be created
+                end % if the file choice is valid
+            end % if a transform is loaded
         end
         
         % @Override from TirfAnalysis.Main.AbstractMainModel
@@ -405,5 +445,58 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             notify(obj,'ViewNeedsUpdate');
         end
         
+        
+        function [nJobsPending, nJobsRunning, nJobsFinished, nJobsErr] ...
+                = getJobStatus(obj)
+            jobStates = obj.LastStatus;
+            
+            nJobsPending = ...
+                sum(strcmp('pending',jobStates)) ...
+                + sum(strcmp('queued',jobStates));
+            
+            nJobsRunning = ...
+                sum(strcmp('running',jobStates));
+            
+            nJobsFinished = ...
+                sum(strcmp('finished',jobStates));
+            
+            nJobsErr = ...
+                sum(strcmp('failed',jobStates));
+                
+        end
+        
+        % delete method to close down the parallel cluster
+        function delete(obj)
+            stop(obj.StatusTimer)
+            delete(obj.StatusTimer)
+            nJobs = length(obj.Jobs);
+            if obj.VERBOSE
+                fprintf('\nClearing cluster jobs\n');
+            end
+            for iJob = 1:nJobs
+                delete(obj.Jobs(iJob));
+            end
+        end
+        
+    end
+    
+    methods (Access = protected)
+        % for the timer - i.e. check on jobs
+        function checkJobStatus(obj,~,~)
+            nJobs = length(obj.Jobs);
+            lastStatus = obj.LastStatus;
+            needToNotify = 0;
+            % loop over created jobs
+            for iJob = 1:nJobs
+                status = obj.Jobs(iJob).State;
+                if numel(lastStatus) < iJob || ~strcmp(lastStatus{iJob},status)
+                    needToNotify = 1;
+                    obj.LastStatus{iJob} = status;
+                end
+            end % loop over jobs
+            if needToNotify
+                notify(obj,'JobStatusChanged');
+            end
+        end
     end
 end

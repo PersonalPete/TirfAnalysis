@@ -148,7 +148,8 @@ classdef AnalysisSettings % a value class...
         function obj = setFixedPos(obj,fixedPos)
             obj.FixedPos = fixedPos;
         end
-
+        
+        % NB Fixed width unsupported at this time (21 April 2015)
         function fixedWid = isFixedWid(obj)
             fixedWid = obj.FixedWid;
         end

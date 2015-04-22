@@ -4,7 +4,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         MovieMetadata % frTime and alexSequence
         AnalysisSettings
         
-        % logicala arrays for indexing into the movie for particular
+        % logical arrays for indexing into the movie for particular
         % illumination conditions
         GreenFrames % D exc
         RedFrames % T exc
@@ -166,8 +166,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                     1:obj.AnalysisSettings.getNFrames)...
                     ,3);
             end
-        end
-        
+        end       
         % @Override from ThreeColorMovie (just adds an averaging syntax)
         function redFrame = getRedFrame(obj,frameNum)
             if nargin > 1 % if we supply a specific frame
@@ -182,8 +181,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                     1:obj.AnalysisSettings.getNFrames)...
                     ,3);
             end
-        end
-        
+        end       
         % @Override from ThreeColorMovie (just adds an averaging syntax)
         function nirFrame = getNirFrame(obj,frameNum)
             if nargin > 1 % if we supply a specific frame
@@ -199,6 +197,16 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                     ,3);
             end
         end
+        
+        function greenFrameTimes = getGreenFrameTimes(obj)
+            greenFrameTimes = obj.GreenFrTimes;
+        end
+        function redFrameTimes = getRedFrameTimes(obj)
+            redFrameTimes = obj.RedFrTimes;
+        end
+        function nirFrameTimes = getNirFrameTimes(obj)
+            nirFrameTimes = obj.NirFrTimes;
+        end        
         
         % Getters for illumination/channel frames
         % if there are no frames with a particular illumination then frames
@@ -225,11 +233,11 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         % getters for the averaged starting frames used for particle
         % detection
         % if there are no frames with a particular illumination, then frame
-        % is a matrix of NaNs nyPix x nxPix in dimension
+        % is a matrix of 1s nyPix x nxPix in dimension
         function frame = getMeanDDFrame(obj)
             frames = obj.getDDFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -239,7 +247,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         function frame = getMeanDTFrame(obj)
             frames = obj.getDTFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -249,7 +257,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         function frame = getMeanDAFrame(obj)
             frames = obj.getDAFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -259,7 +267,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         function frame = getMeanTTFrame(obj)
             frames = obj.getTTFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -269,7 +277,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         function frame = getMeanTAFrame(obj)
             frames = obj.getTAFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -279,7 +287,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         function frame = getMeanAAFrame(obj)
             frames = obj.getAAFrames;
             if isempty(frames)
-                frame = ones(size(frames,1),size(frames,2));
+                frame = zeros(size(frames,1),size(frames,2));
             else
                 lastFrame = ...
                     min(size(frames,3),obj.AnalysisSettings.getNFrames);
@@ -293,7 +301,7 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             analysisSettings = obj.AnalysisSettings;
         end
         
-        % Getter for the detection results
+        % Getters for the detection results
         function ddPos = getDdPos(obj)
             ddPos = obj.DDPositions;
         end
@@ -313,6 +321,95 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             aaPos = obj.AAPositions;
         end
         
+        
+        % Getter for individual image stacks
+        function [ddStacks,dtStacks,daStacks,ttStacks,taStacks,aaStacks,...
+                    posGreen,posRed,posNir,...
+                    originGreen,originRed,originNir] = ...
+                getImageStacks(obj)
+            % getImageStacks returns (for each channel) a RxRxFxM matrix of
+            % pixel intensity values, where R is 2*window_radius + 1, F is
+            % the number of frames in the channel, and M is the number of
+            % linked particles.
+            % the origin positions of the fitting squares are given, to
+            % convert any fit positions back to true (in channel) positions
+            % then we need to add this position to the output of any
+            % gaussian fit
+            
+            windowRad = obj.AnalysisSettings.getWindowRad;
+            [posGreen, posRed, posNir] = getLinkedPos(obj);
+            numLink = size(posGreen,1);
+            
+            import TirfAnalysis.Main.AnalysisMovie
+            
+            [ddStacks, ddFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getDDFrames,windowRad,numLink);
+            [dtStacks, dtFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getDTFrames,windowRad,numLink);
+            [daStacks, daFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getDAFrames,windowRad,numLink);
+            [ttStacks, ttFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getTTFrames,windowRad,numLink);
+            [taStacks, taFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getTAFrames,windowRad,numLink);
+            [aaStacks, aaFrames] = ...
+                AnalysisMovie.allocateStacks(...
+                @obj.getAAFrames,windowRad,numLink);
+            
+            originGreen = round(posGreen) - (1+windowRad);
+            originRed = round(posRed) - (1+windowRad);
+            originNir = round(posNir) - (1+windowRad);
+            
+            % loop over linked particles
+            for iLink = 1:numLink    
+                % N.B. pos(:,1) is the second movie dimension and pos(:,2)
+                % is the first
+                ddStacks(:,:,:,iLink) = ...
+                    ddFrames(...
+                    round(posGreen(iLink,2)-windowRad): ...
+                    round(posGreen(iLink,2)+windowRad), ...
+                    round(posGreen(iLink,1)-windowRad): ...
+                    round(posGreen(iLink,1)+windowRad),:);
+                dtStacks(:,:,:,iLink) = ...
+                    dtFrames(...
+                    round(posRed(iLink,2)-windowRad): ...
+                    round(posRed(iLink,2)+windowRad), ...
+                    round(posRed(iLink,1)-windowRad): ...
+                    round(posRed(iLink,1)+windowRad),:);               
+                daStacks(:,:,:,iLink) = ...
+                    daFrames(...
+                    round(posNir(iLink,2)-windowRad): ...
+                    round(posNir(iLink,2)+windowRad), ...
+                    round(posNir(iLink,1)-windowRad): ...
+                    round(posNir(iLink,1)+windowRad),:);
+                
+                ttStacks(:,:,:,iLink) = ...
+                    ttFrames(...
+                    round(posRed(iLink,2)-windowRad): ...
+                    round(posRed(iLink,2)+windowRad), ...
+                    round(posRed(iLink,1)-windowRad): ...
+                    round(posRed(iLink,1)+windowRad),:);
+                taStacks(:,:,:,iLink) = ...
+                    taFrames(...
+                    round(posNir(iLink,2)-windowRad): ...
+                    round(posNir(iLink,2)+windowRad), ...
+                    round(posNir(iLink,1)-windowRad): ...
+                    round(posNir(iLink,1)+windowRad),:);
+                
+                aaStacks(:,:,:,iLink) = ...
+                    aaFrames(...
+                    round(posNir(iLink,2)-windowRad): ...
+                    round(posNir(iLink,2)+windowRad), ...
+                    round(posNir(iLink,1)-windowRad): ...
+                    round(posNir(iLink,1)+windowRad),:);                
+            end   
+        end
+        
         function [posGreen, posRed, posNir] = getLinkedPos(obj)
             linkedPos = obj.LinkedPos;
             
@@ -323,9 +420,30 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             posNir = tform.transformR2N(linkedPos);
             
         end
+        
+        function movieMetadata = getMovieMetadata(obj)
+            movieMetadata = obj.MovieMetadata;
+        end
+    end
+    
+    methods (Access = private, Static)
+        % convenience function for allocating empty image stacks array
+        function [emptyStacks, channelFrames] = ...
+                allocateStacks(getFrameMethod,windowRad,numLink)
+            channelFrames = getFrameMethod();
+            emptyStacks = zeros(...
+                windowRad*2 + 1,...
+                windowRad*2 + 1,...
+                size(channelFrames,3),...
+                numLink);
+        end
+        
     end
     
     methods (Access = private)
+        
+
+        
         function linkParticles(obj)
             %% Linking algorithm - for setting the LinkedPos
             tform3 = obj.AnalysisSettings.getTform3;
@@ -440,6 +558,27 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
             
             nKeep = 0;
             
+            fitWindowRad = obj.AnalysisSettings.getWindowRad;
+            
+            
+            greenLim = tform3.getGreenLimits;
+            redLim = tform3.getRedLimits;
+            nirLim = tform3.getNirLimits;
+            
+            greenXMax = greenLim(2) - greenLim(1) + 1;
+            greenYMax = greenLim(4) - greenLim(3) + 1;
+            redXMax = redLim(2) - redLim(1) + 1;
+            redYMax = redLim(4) - redLim(3) + 1;
+            nirXMax = nirLim(2) - nirLim(1) + 1;
+            nirYMax = nirLim(4) - nirLim(3) + 1;
+            
+            
+            checkBoundaryOk = @(pos,xmax,ymax) ...
+                round(pos(1) - fitWindowRad) >= 1 && ...
+                round(pos(1) + fitWindowRad) <= xmax && ...
+                round(pos(2) - fitWindowRad) >=1 && ...
+                round(pos(2) + fitWindowRad) < ymax;
+            
             if nClusters > 0
                 foundClusters = foundClusters(1:nClusters);
                 
@@ -471,13 +610,27 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                             numChan(4),...
                             numChan(5),...
                             numChan(6))
-                        nKeep = nKeep + 1;
-                        % store the OK clusters
-                        keepClusters{nKeep} = clusterPos;
-                        % set the linked position to the mean cluster
-                        % positon (in the red channel)
+
                         meanPos = mean(clusterPos(:,1:2),1);
-                        linkedPos(nKeep,:) = meanPos;
+                        redPos = meanPos;
+                        greenPos = tform3.transformR2G(meanPos);
+                        nirPos = tform3.transformR2N(meanPos);
+                        
+                        if checkBoundaryOk(...
+                                greenPos,greenXMax,greenYMax) && ...
+                                checkBoundaryOk(...
+                                redPos,redXMax,redYMax) && ...
+                                checkBoundaryOk(...
+                                nirPos,nirXMax,nirYMax)
+                            nKeep = nKeep + 1;
+                            % store the OK clusters
+                            keepClusters{nKeep} = clusterPos;
+                            % set the linked position to the mean cluster
+                            % positon (in the red channel)
+                            
+                            linkedPos(nKeep,:) = meanPos;
+                        end
+
                     end % check whether correct channels for linking
                     
                 end % loop over found clusters
@@ -494,4 +647,55 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         end % function linkParticles
     end
     
+    methods (Static, Access = public)
+        % for checking if metadata is present and the analysis settings are
+        % suitable
+        function [ok, fitsMovie, metadata] = ...
+                checkIfOk(path,file,analysisSettings)
+            
+            ok = 0;
+            fitsMovie = [];
+            metadata = [];
+            
+            if ~isempty(file) && ~all(file == 0)
+                fullPath = fullfile(path,file);
+                fitsMovie = TirfAnalysis.Movie.FitsMovie(fullPath);
+                [nxPix, nyPix] = fitsMovie.getNPix;
+                % check if the movie is suitable for our transform
+                if analysisSettings.getGreenLimits(2) ...
+                        <= nxPix && ...
+                        analysisSettings.getGreenLimits(4) ...
+                        <= nyPix && ...
+                        analysisSettings.getRedLimits(2) ...
+                        <= nxPix && ...
+                        analysisSettings.getRedLimits(4) ...
+                        <= nyPix && ...
+                        analysisSettings.getNirLimits(2) ...
+                        <= nxPix && ...
+                        analysisSettings.getNirLimits(4) ...
+                        <= nyPix
+                    % if the movie is large enough for the channel
+                    % limits
+                    metadataLoaded = 0;
+                    try
+                        metadata = ...
+                            load(fullfile(path,[file(1:end-4) 'mat']));
+                    catch
+                        warning('Problem loading movie metadata');
+                    end
+                    if (isfield(metadata,'frTime') && ...
+                            isfield(metadata,'alexSequence') && ...
+                            size(metadata.alexSequence,1) == 3)
+                        metadataLoaded = 1;
+                    end
+                    if metadataLoaded
+                        ok = 1;
+                    end
+                end % if the movie is big enough for the tform3
+            end % if the file selected is 'real'
+            
+            
+            
+        end
+    end
 end
