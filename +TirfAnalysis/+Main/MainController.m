@@ -31,6 +31,9 @@ classdef MainController < handle
             callbacks{6} = @(~,~)obj.Model.loadSettings;
             % save settings
             callbacks{7} = @(~,~)obj.Model.saveCurrentSettings;
+            % update job status
+            callbacks{8} = @(~,~)obj.Model.checkJobStatus;
+            
             
             % call the view constructor
             obj.View = TirfAnalysis.Main.MainView(obj,callbacks);

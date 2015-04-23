@@ -45,29 +45,53 @@ classdef AnalysisSettings % a value class...
                 widLim,...
                 windowRad)
             % constructor
-            
-            % detection settings
-            obj.Tform3 = tform3;
-            obj.NFrames = nFrames;
-            obj.SmoothKernel = smoothKernel;
-            obj.PeakThresh = peakThresh;
-            obj.BgdRadiusFac = bgdRadiusFac;
-            obj.LinkRadius = linkRadius;
-            obj.LinkBoolFun = linkBoolFun;
-            obj.NearNeighLim = nearNeighLim;
-            obj.FilteringEllip = filteringEllip;
-            obj.FilteringWid = filteringWid;
-            
-            % algorithm settings
-            obj.FixedPos = fixedPos;
-            obj.FixedWid = fixedWid;
-            obj.Ellipse = ellipse;
-            
-            % algorithm limits
-            obj.PosLim = posLim;
-            obj.WidLim = widLim;
-            
-            obj.WindowRad = windowRad;
+            if nargin < 16
+                obj.Tform3 = TirfAnalysis.Reg.TformInfo3;
+                obj.NFrames = [];
+                obj.SmoothKernel = [];
+                obj.PeakThresh = [];
+                obj.BgdRadiusFac = [];
+                obj.LinkRadius = [];
+                obj.LinkBoolFun = @(DD,DT,DA,TT,TA,AA)0;
+                obj.NearNeighLim = [];
+                obj.FilteringEllip = [];
+                obj.FilteringWid = [];
+                
+                % algorithm settings
+                obj.FixedPos = [];
+                obj.FixedWid = [];
+                obj.Ellipse = [];
+                
+                % algorithm limits
+                obj.PosLim = [];
+                obj.WidLim = [];
+                
+                obj.WindowRad = [];
+                
+            else
+                % detection settings
+                obj.Tform3 = tform3;
+                obj.NFrames = nFrames;
+                obj.SmoothKernel = smoothKernel;
+                obj.PeakThresh = peakThresh;
+                obj.BgdRadiusFac = bgdRadiusFac;
+                obj.LinkRadius = linkRadius;
+                obj.LinkBoolFun = linkBoolFun;
+                obj.NearNeighLim = nearNeighLim;
+                obj.FilteringEllip = filteringEllip;
+                obj.FilteringWid = filteringWid;
+                
+                % algorithm settings
+                obj.FixedPos = fixedPos;
+                obj.FixedWid = fixedWid;
+                obj.Ellipse = ellipse;
+                
+                % algorithm limits
+                obj.PosLim = posLim;
+                obj.WidLim = widLim;
+                
+                obj.WindowRad = windowRad;
+            end
         end
         
         %% Getters and setters N.B. setters return a new instance of the class

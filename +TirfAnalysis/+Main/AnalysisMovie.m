@@ -235,65 +235,24 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
         % if there are no frames with a particular illumination, then frame
         % is a matrix of 1s nyPix x nxPix in dimension
         function frame = getMeanDDFrame(obj)
-            frames = obj.getDDFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getDDFrames);
         end
         function frame = getMeanDTFrame(obj)
-            frames = obj.getDTFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getDTFrames);
         end
         function frame = getMeanDAFrame(obj)
-            frames = obj.getDAFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getDAFrames);
         end
         function frame = getMeanTTFrame(obj)
-            frames = obj.getTTFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getTTFrames);
         end
         function frame = getMeanTAFrame(obj)
-            frames = obj.getTAFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getTAFrames);
         end
         function frame = getMeanAAFrame(obj)
-            frames = obj.getAAFrames;
-            if isempty(frames)
-                frame = zeros(size(frames,1),size(frames,2));
-            else
-                lastFrame = ...
-                    min(size(frames,3),obj.AnalysisSettings.getNFrames);
-                frame = mean(frames(:,:,1:lastFrame),3);
-            end
+            frame = getMeanFrame(obj,@obj.getAAFrames);
         end
+        
         
         
         % Getter for the analysis settings
@@ -442,7 +401,21 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
     
     methods (Access = private)
         
-
+        % helper for mean frame getter
+        function frame = getMeanFrame(obj,getFrameMethod)
+            frames = getFrameMethod();
+            if isempty(frames)
+                frame = zeros(size(frames,1),size(frames,2));
+            else
+                if obj.AnalysisSettings.getNFrames == 0 
+                    frame = max(frames,[],3);
+                else
+                    lastFrame = ...
+                        min(size(frames,3),obj.AnalysisSettings.getNFrames);
+                    frame = mean(frames(:,:,1:lastFrame),3);
+                end
+            end
+        end
         
         function linkParticles(obj)
             %% Linking algorithm - for setting the LinkedPos

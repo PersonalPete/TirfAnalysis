@@ -31,23 +31,23 @@ classdef RegModel < handle
                 obj.MovieLim = movieLim;
                 % check if our channels (loaded perhaps from default) are
                 % out-of-bounds for the supplied image
-                if obj.GreenLimits(2) > movieLim(1) 
-                    obj.GreenLimits(2) = movieLim(1);                    
+                if obj.GreenLimits(2) > movieLim(2) 
+                    obj.GreenLimits(2) = movieLim(2);                    
                 end
-                if obj.GreenLimits(4) > movieLim(2)
-                    obj.GreenLimits(4) = movieLim(2);
+                if obj.GreenLimits(4) > movieLim(1)
+                    obj.GreenLimits(4) = movieLim(1);
                 end
-                if obj.RedLimits(2) > movieLim(1) 
-                    obj.RedLimits(2) = movieLim;
+                if obj.RedLimits(2) > movieLim(2) 
+                    obj.RedLimits(2) = movieLim(2);
                 end
-                if obj.RedLimits(4) > movieLim(2)
-                    obj.RedLimits(4) = movieLim(2);
+                if obj.RedLimits(4) > movieLim(1)
+                    obj.RedLimits(4) = movieLim(1);
                 end
-                if  obj.NirLimits(2) > movieLim(1) 
-                    obj.NirLimits(2) = movieLim(1);
+                if  obj.NirLimits(2) > movieLim(2) 
+                    obj.NirLimits(2) = movieLim(2);
                 end
-                if  obj.NirLimits(4) > movieLim(2)
-                    obj.NirLimits(4) = movieLim(2);
+                if  obj.NirLimits(4) > movieLim(1)
+                    obj.NirLimits(4) = movieLim(1);
                 end
                 % attach the channel limits information
                 obj.BeadsMovie = ...
@@ -76,23 +76,23 @@ classdef RegModel < handle
                 movieLim = obj.MovieLim;
                 % check if our channels (loaded perhaps from default) are
                 % out-of-bounds for the supplied image
-                if obj.GreenLimits(2) > movieLim(1) 
-                    obj.GreenLimits(2) = movieLim(1);                    
+                if obj.GreenLimits(2) > movieLim(2) 
+                    obj.GreenLimits(2) = movieLim(2);                    
                 end
-                if obj.GreenLimits(4) > movieLim(2)
-                    obj.GreenLimits(4) = movieLim(2);
+                if obj.GreenLimits(4) > movieLim(1)
+                    obj.GreenLimits(4) = movieLim(1);
                 end
-                if obj.RedLimits(2) > movieLim(1) 
-                    obj.RedLimits(2) = movieLim;
+                if obj.RedLimits(2) > movieLim(2) 
+                    obj.RedLimits(2) = movieLim(2);
                 end
-                if obj.RedLimits(4) > movieLim(2)
-                    obj.RedLimits(4) = movieLim(2);
+                if obj.RedLimits(4) > movieLim(1)
+                    obj.RedLimits(4) = movieLim(1);
                 end
-                if  obj.NirLimits(2) > movieLim(1) 
-                    obj.NirLimits(2) = movieLim(1);
+                if  obj.NirLimits(2) > movieLim(2) 
+                    obj.NirLimits(2) = movieLim(2);
                 end
-                if  obj.NirLimits(4) > movieLim(2)
-                    obj.NirLimits(4) = movieLim(2);
+                if  obj.NirLimits(4) > movieLim(1)
+                    obj.NirLimits(4) = movieLim(1);
                 end
                 
                 % and set them on the three color movie
@@ -121,17 +121,17 @@ classdef RegModel < handle
         end
         
         function [success, tform, positionsInRed] = calculateTransform(obj)
-            try
+             try
                 [tform, positionsInRed] = ...
                     TirfAnalysis.Reg.Detection.threeColorTransform(...
                     obj.BeadsMovie);
                 obj.CurrentTformInfo3 = tform;
                 success = 1;
-            catch
+             catch
                 tform = [];
                 positionsInRed = [];
                 success = 0;
-            end
+             end
             
         end % function calculateTransform
         

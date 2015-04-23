@@ -2,7 +2,7 @@ classdef Detection < TirfAnalysis.Reg.AbstractDetection
     properties (Constant = true, Access = protected)
         DFT_BLUR_SIG = 2 % for blurring before particle detection
         % roughly the spot size
-        DFT_PEAK_FAC = 0.05 % peaks are >5% higher than background
+        DFT_PEAK_FAC = 3 % 0.05 % peaks are >2% higher than background
         DFT_KERNEL_FAC = 2 % kernel size and background are this many times
         % the blurring sigma
         % image fitting upper and lower bounds

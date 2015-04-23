@@ -83,6 +83,8 @@ classdef MainView < handle
             loadSettings = callbacks{6};
             saveSettings = callbacks{7};
             
+            checkStatus = callbacks{8};
+            
             % make the main figure
             obj.FigH = figure('CloseRequestFcn',@(~,~) obj.delete,...
                 'Color',obj.DFT_COL_BGD,...
@@ -148,7 +150,11 @@ classdef MainView < handle
             
             % make the running panel
             obj.RunH = TirfAnalysis.GuiElements.RunInfo(obj.FigH,...
-                obj.RUN_PANEL_POS,runModel);
+                obj.RUN_PANEL_POS,runModel,checkStatus);
+            
+            % set the handle visibility
+            set(obj.FigH,...
+                'HandleVisibility','callback');
             
         end
         

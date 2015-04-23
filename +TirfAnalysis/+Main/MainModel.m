@@ -11,7 +11,6 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         ParCluster
         Jobs
         LastStatus
-        StatusTimer
     end
     
     properties (Constant = true)
@@ -20,7 +19,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         % parallel cluster profile
         DFT_PROFILE = 'local'
         % timer period (for checking status of parcluster jobs)
-        DFT_TIMER_PERIOD = 1 
+        DFT_TIMER_PERIOD = 30 
         
         VERBOSE = 1
         
@@ -62,12 +61,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             
             % startup the parallel cluster
             obj.ParCluster = parcluster(obj.DFT_PROFILE);
-            
-            obj.StatusTimer = timer('BusyMode','drop',...
-                'ExecutionMode','fixedSpacing',...
-                'Period',obj.DFT_TIMER_PERIOD,...
-                'TimerFcn',@obj.checkJobStatus);
-            start(obj.StatusTimer);
+           
             
         end % constructor
         
@@ -101,16 +95,16 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                 [ok, fitsMovie, metadata] = ...
                     AnalysisMovie.checkIfOk(...
                     path,file,obj.AnalysisSettings);
-          
+                
+                
+                
+                if ok
+                    obj.CurrentMovie = fitsMovie;
+                    obj.MovieMetadata = metadata;
+                    obj.IsMovieLoaded = 1;
+                    success = 1;
+                end
             end % if we have a transform loaded
-            
-            if ok
-                obj.CurrentMovie = fitsMovie;
-                obj.MovieMetadata = metadata;
-                obj.IsMovieLoaded = 1;
-                success = 1;
-            end
-            
             notify(obj,'ViewNeedsUpdate');
         end % loadDisplayMovie
         
@@ -134,7 +128,8 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                     ~any(isnan(radFac))
                 kernel = abs(kernel);
                 radFac = abs(radFac);
-                nFrames = max(1,round(abs(nFrames)));
+                % max frames can be zero - uses maximum detection method
+                nFrames = max(0,round(abs(nFrames)));
                 thresh = abs(thresh);
                 
                 obj.AnalysisSettings = ...
@@ -286,7 +281,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                 % use the userinterface for file loading
                 [file, loadPath] = uigetfile('*.fits;*.FITS','Load Movie',...
                     'Multiselect','on');
-                if ~isempty(file) && ~all(file == 0)
+                if iscell(file) || ( ~isempty(file) && ~all(file == 0))
                     % make sure it is always a cell
                     if ~iscell(file)
                         file = {file};
@@ -297,17 +292,19 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
                     % in different folders
                     c = clock;
                     saveFolderName = [obj.ANALYSIS_FOLDER, ...
-                        sprintf('%i%02i%02i%02i%02i_%.0f',c)];
+                        sprintf('%i-%02i-%02i %02i%02i_%.0f',c)];
                     folderSuccess = mkdir(loadPath,saveFolderName);
                     
                     % if the folder is successfully created
                     if folderSuccess
                         savePath = fullfile(loadPath,saveFolderName);                    
                         nJobs = length(obj.Jobs);
+                        alreadyStarted = 0;
                         for iMovie = 1:length(file)
                             % allocate storage for the job object
-                            if nJobs == 0 % if it is the first job
+                            if (nJobs == 0 && ~alreadyStarted)% if it is the first job
                                 obj.Jobs = obj.ParCluster.createJob;
+                                alreadyStarted = 1;
                             else
                                 obj.Jobs(nJobs + iMovie) = obj.ParCluster.createJob;
                             end
@@ -467,8 +464,6 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         
         % delete method to close down the parallel cluster
         function delete(obj)
-            stop(obj.StatusTimer)
-            delete(obj.StatusTimer)
             nJobs = length(obj.Jobs);
             if obj.VERBOSE
                 fprintf('\nClearing cluster jobs\n');
@@ -478,9 +473,6 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             end
         end
         
-    end
-    
-    methods (Access = protected)
         % for the timer - i.e. check on jobs
         function checkJobStatus(obj,~,~)
             nJobs = length(obj.Jobs);

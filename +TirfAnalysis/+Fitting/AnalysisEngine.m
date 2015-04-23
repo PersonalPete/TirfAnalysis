@@ -102,6 +102,14 @@ classdef AnalysisEngine < handle
                 
                 nParticles = size(originGreen,1);
                 
+                metadata = obj.AnalysisMovie.getMovieMetadata;
+                
+                % delete the analysis movie object (hopefully this reduces
+                % memory useage)
+                delete(obj.AnalysisMovie);
+                obj.Abort = 1; % having deleted this, we can't run analysis
+                               % again
+                
                 % allocate the results array
                 particles(nParticles) = TirfAnalysis.Results.Particle();
                 
@@ -135,7 +143,7 @@ classdef AnalysisEngine < handle
                 movieResult = TirfAnalysis.Results.MovieResult(...
                     particles,...
                     obj.AnalysisSettings,...
-                    obj.AnalysisMovie.getMovieMetadata,...
+                    metadata,...
                     obj.MovieFileName);
                 
                 success = 1;

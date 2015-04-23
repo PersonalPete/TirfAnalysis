@@ -47,6 +47,10 @@ classdef Particle % A value class
                 tform3)
             % special syntax, useful for subclassing to add behaviour
             % objCopy = Particle(obj);
+            % you'd want a subclass constructor that took in an original
+            % particle object and called the superclass constructor with
+            % the original particle - then you could add methods, which
+            % would access the original particle's data
             % fitResults = {dd,dt,da,tt,ta,aa} (same for imData)
             % frameTimes = {green, red, nir}
             if nargin == 0
