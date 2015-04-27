@@ -6,11 +6,15 @@ classdef (Abstract) TogglingTrace < handle
         % below are arrays of handles to objects on the figure
         TogglesH % visibility toggles
         LinesH % lines on this axis
+        LimH % structure with the limits handles
+        
+        LimListener % listener for axis limits change
         
         ButPos
+        LimPos
         NumTraces
         
-        % only used if AUTOSCALE = true
+        % ylimits to default to
         LimitY = [0 1]
     end
     
@@ -18,9 +22,16 @@ classdef (Abstract) TogglingTrace < handle
         AX_TXT_COL = [0.0 0.0 0.0]
         TXT_SIZE = 0.6
         FRAC_BUT = 0.05 % the fraction of the area that is left for buttons
+        FRAC_LIM = 0.05
         LINE_WIDTH = 2
-
+        
         BUT_COL = [1.0 1.0 1.0]
+        
+        COL_EDT_BGD = [0.62 0.71 0.80]
+        COL_EDT_TXT = [0.20 0.20 0.20]
+        
+        DFT_BUT_COL = [0.24 0.35 0.67]
+        DFT_BUT_TXT = [1 1 1]
         
         LABELS_ALL = {'DD','DT','DA','TT','TA','AA'}
         COLORS_ALL = {...
@@ -30,7 +41,7 @@ classdef (Abstract) TogglingTrace < handle
             [0.9 0.0 0.0],...
             [0.4 0.0 0.0],...
             [0.8 0.8 0.5]}
-            
+        
         LABELS_FRET = {'DT','DA','TA'}
         COLORS_FRET = {...
             [0.9 0.7 0.0],...
@@ -38,7 +49,7 @@ classdef (Abstract) TogglingTrace < handle
             [0.4 0.0 0.0]}
         
         X_LABEL = 'Time (s)'
-
+        
     end
     properties (Abstract, Access = protected, Constant)
         AUTOSCALE
@@ -60,12 +71,18 @@ classdef (Abstract) TogglingTrace < handle
             
             butPos = pos;
             butPos(3) = pos(3)*obj.FRAC_BUT;
-            butPos(1) = pos(1) + (1-obj.FRAC_BUT)*pos(3); 
+            butPos(1) = pos(1) + (1-obj.FRAC_BUT-obj.FRAC_LIM)*pos(3);
             butPos(4) = pos(4)/numBut;
             obj.ButPos = butPos;
             
+            limPos = pos;
+            limPos(3) = pos(3)*obj.FRAC_LIM;
+            limPos(1) = pos(1) + (1-obj.FRAC_LIM)*pos(3);
+            limPos(4) = pos(4)/6;
+            obj.LimPos = limPos;
+            
             axPos = pos;
-            axPos(3) = (1-obj.FRAC_BUT)*pos(3);
+            axPos(3) = (1-obj.FRAC_BUT-obj.FRAC_LIM)*pos(3);
             
             % build the axis
             obj.AxH = axes('parent',obj.FigH,...
@@ -96,6 +113,13 @@ classdef (Abstract) TogglingTrace < handle
                 obj.TogglesH(iBut) = ...
                     obj.buildButton(iBut,labels{iBut},colors{iBut});
             end
+            
+            % y-limit control
+            obj.LimH = obj.buildLimitControls;
+            
+            obj.LimListener = addlistener(obj.AxH,'YLim','PostSet',...
+                @(~,~)obj.updateDispLim);
+            
         end
         
         function setData(obj,data)
@@ -110,7 +134,7 @@ classdef (Abstract) TogglingTrace < handle
                 xDataMax = max(max(xData),xDataMax);
                 yDataMax = max(max(yData),yDataMax);
             end
-            set(obj.AxH,'XLim',[0 xDataMax]);
+%             set(obj.AxH,'XLim',[0 xDataMax]);
             if obj.AUTOSCALE
                 set(obj.AxH,'YLim',[0 yDataMax]);
             else
@@ -134,6 +158,8 @@ classdef (Abstract) TogglingTrace < handle
             end
         end
         
+        
+        
     end
     
     methods (Access = protected)
@@ -145,7 +171,7 @@ classdef (Abstract) TogglingTrace < handle
                 'XData',[],...
                 'YData',[],...
                 'Visible','on',...
-                'color',color);              
+                'color',color);
         end
         
         function buttonH = buildButton(obj,idx,label,color)
@@ -181,6 +207,83 @@ classdef (Abstract) TogglingTrace < handle
                 set(obj.LinesH(idx),'Visible','off');
             end
         end
+        
+        function controlH = buildLimitControls(obj)
+            
+            figCol = get(obj.FigH,'color');
+            
+            textPos = obj.LimPos;
+            textPos(2) = textPos(2) + 2*textPos(4);
+            
+            upperPos = obj.LimPos;
+            upperPos(2) = upperPos(2) + 1*upperPos(4);
+            
+            lowerPos = obj.LimPos;
+            
+            textH = uicontrol('Parent',obj.FigH,...
+                'style','text',...
+                'Units','normalized',...
+                'position',textPos,...
+                'fontunits','normalized',...
+                'fontsize',obj.TXT_SIZE,...
+                'string','Limits',...
+                'BackgroundColor',figCol,...
+                'ForegroundColor',obj.AX_TXT_COL,...
+                'callback','');
+            
+            upperH = uicontrol('Parent',obj.FigH,...
+                'style','edit',...
+                'Units','normalized',...
+                'position',upperPos,...
+                'fontunits','normalized',...
+                'fontsize',obj.TXT_SIZE,...
+                'string','',...
+                'BackgroundColor',obj.COL_EDT_BGD,...
+                'ForegroundColor',obj.COL_EDT_TXT,...
+                'callback',@(~,~)obj.updateTraceLim);
+            
+            lowerH = uicontrol('Parent',obj.FigH,...
+                'style','edit',...
+                'Units','normalized',...
+                'position',lowerPos,...
+                'fontunits','normalized',...
+                'fontsize',obj.TXT_SIZE,...
+                'string','',...
+                'BackgroundColor',obj.COL_EDT_BGD,...
+                'ForegroundColor',obj.COL_EDT_TXT,...
+                'callback',@(~,~)obj.updateTraceLim);
+            
+            controlH.textH = textH;
+            controlH.upperH = upperH;
+            controlH.lowerH = lowerH;
+        end
+        
+        % set the limits on the trace to match the user input
+        function updateTraceLim(obj)
+            % make sure the limits input are sensible
+            upperLim = str2double(get(obj.LimH.upperH,'String'));
+            lowerLim = str2double(get(obj.LimH.lowerH,'String'));
+            
+            if ~(isnan(upperLim) || isnan(lowerLim)) && upperLim > lowerLim
+                yLimits = [lowerLim upperLim];
+                set(obj.AxH,'YLim',yLimits);
+            end
+            
+        end
+        
+        % function for the ylimit change listener
+        function updateDispLim(obj)
+            yLimits = get(obj.AxH,'ylim');
+            
+            yMin = min(yLimits);
+            yMax = max(yLimits);
+            
+            % upper limit value
+            set(obj.LimH.upperH,'String',num2str(yMax));
+            % lower limit value
+            set(obj.LimH.lowerH,'String',num2str(yMin));
+            
+        end
+        
     end
 end
-      
