@@ -35,6 +35,11 @@ classdef Particle % A value class
         Tform3
     end
     
+    properties (Access = public, Constant)
+        POSITION_AVG = 10
+        
+    end
+    
     methods (Access = public)
         % constructor
         function obj = ...
@@ -155,6 +160,7 @@ classdef Particle % A value class
         function nirFrameTime = getNirFrameTime(obj)
             nirFrameTime = obj.NirFrameTime;
         end
+        
         function isFixedPos = isFixedPos(obj)
             isFixedPos = obj.IsFixedPos;
         end
@@ -288,6 +294,77 @@ classdef Particle % A value class
         function tform3 = getTform3(obj)
             tform3 = obj.Tform3;
         end
+        
+        % for interpreting distance
+        function [distance, time] = getDistance(obj,arg1,arg2)
+            % syntax is 
+            % [distance, time] = ...
+            % obj.getDistance(channelString,averageFrames)
+            % where channelString is e.g. 'DD' or 'TT' and averageFrames is
+            % the number of frames to average over for the starting
+            % position
+            % 
+            % [distance, time] = ...
+            % obj.getDistance(channel1,channel2)
+            % returns the distance between each channel at each of
+            % channel1's frame times. channel1 = 'DD' etc...
+            %
+            if nargin < 3 || ~ischar(arg2)
+                % use the averaging syntax
+                if nargin < 3
+                    arg2 = obj.POSITION_AVG;
+                end
+                posFcn = obj.parsePositionString(arg1);
+                
+                [pos, time] = posFcn();
+                
+                posLength = size(pos,1);
+                
+                if posLength < 1
+                    distance = [];
+                    time = [];
+                else
+                    originalPos = mean(pos(1:min(posLength,arg2),:),1);
+                    distance = hypot(...
+                        pos(:,1) - originalPos(1),...
+                        pos(:,2) - originalPos(2));
+                end
+            else
+                % use the comparing syntax
+                pos1Fcn = obj.parsePositionString(arg1);
+                pos2Fcn = obj.parsePositionString(arg2);
+                
+                [pos1, time1] = pos1Fcn();
+                [pos2, time2] = pos2Fcn();
+                
+                pos1Length = size(pos1,1);
+                pos2Length = size(pos2,1);
+                
+                if pos1Length < 1 || pos2Length < 2
+                    distance = [];
+                    time = [];
+                else
+                    % interpolate the position so we can use the first
+                    % argument's times
+                    pos2Interp = interp1(time2,pos2,time1,'nearest');
+                    
+                    distance = hypot(...
+                        pos2Interp(:,1) - pos1(:,1),...
+                        pos2Interp(:,2) - pos1(:,2));
+                    time = time1;
+                end                
+            end
+            
+            
+            
+            
+        end
+        
+        function maxTime = getMaxTime(obj)
+            maxTime = max([obj.GreenFrameTime(:);...
+                obj.RedFrameTime(:);...
+                obj.NirFrameTime],[],1);
+        end
     end
     
     methods (Access = protected)
@@ -317,6 +394,25 @@ classdef Particle % A value class
             end
         end
         
+        function positionFcn = parsePositionString(obj,positionString)
+            posLower = lower(positionString);
+            
+            if strcmp(posLower,'dd')
+                positionFcn = @obj.getDdPosition;
+            elseif strcmp(posLower,'dt')
+                positionFcn = @obj.getDtPosition;
+            elseif strcmp(posLower,'da')
+                positionFcn = @obj.getDaPosition;
+            elseif strcmp(posLower,'tt')
+                positionFcn = @obj.getTtPosition;
+            elseif strcmp(posLower,'ta')
+                positionFcn = @obj.getTaPosition;
+            elseif strcmp(posLower,'aa')
+                positionFcn = @obj.getAaPosition;
+            end
+            
+            
+        end
     end
 end
             

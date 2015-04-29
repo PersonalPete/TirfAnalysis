@@ -8,6 +8,8 @@ classdef (Abstract) TogglingTrace < handle
         LinesH % lines on this axis
         LimH % structure with the limits handles
         
+        HighlightLineH % line to highlight
+        
         LimListener % listener for axis limits change
         
         ButPos
@@ -20,10 +22,12 @@ classdef (Abstract) TogglingTrace < handle
     
     properties (Access = protected, Constant)
         AX_TXT_COL = [0.0 0.0 0.0]
-        TXT_SIZE = 0.6
+        TXT_SIZE = 0.4
         FRAC_BUT = 0.05 % the fraction of the area that is left for buttons
         FRAC_LIM = 0.05
-        LINE_WIDTH = 2
+        LINE_WIDTH = 1
+        
+        
         
         BUT_COL = [1.0 1.0 1.0]
         
@@ -50,6 +54,8 @@ classdef (Abstract) TogglingTrace < handle
         
         X_LABEL = 'Time (s)'
         
+        HIGHLIGHT_COL = [1.0 0.1 0.1]
+        HIGHLIGHT_WID = 2
     end
     properties (Abstract, Access = protected, Constant)
         AUTOSCALE
@@ -90,7 +96,8 @@ classdef (Abstract) TogglingTrace < handle
                 'Position',axPos,...
                 'xcolor',obj.AX_TXT_COL,...
                 'ycolor',obj.AX_TXT_COL,...
-                'Box','on');
+                'Box','on',...
+                'HandleVisibility','callback');
             
             ylabel(obj.AxH,yString);
             
@@ -117,34 +124,60 @@ classdef (Abstract) TogglingTrace < handle
             % y-limit control
             obj.LimH = obj.buildLimitControls;
             
+            
+            obj.HighlightLineH = obj.buildHighlight;    
+            
             obj.LimListener = addlistener(obj.AxH,'YLim','PostSet',...
                 @(~,~)obj.updateDispLim);
-            
+
         end
         
+        % takes in a cell array of nx2 doubles and updates the lines
+        % DOES NOT UPDATE THE AXIS LIMITS TO MATCH IN THE X-DIRECTION
         function setData(obj,data)
             % data is a cell of nx2 doubles i.e. x,y data in rows
             % it is plotted on the axes in order
             xDataMax = 1;
             yDataMax = 1;
             for iLine = 1:numel(data)
-                xData = data{iLine}(:,1);
-                yData = data{iLine}(:,2);
+                if isempty(data{iLine})
+                    xData = [];
+                    yData = [];
+                else
+                    xData = data{iLine}(:,2);
+                    yData = data{iLine}(:,1);
+                end
                 set(obj.LinesH(iLine),'XData',xData,'YData',yData);
-                xDataMax = max(max(xData),xDataMax);
-                yDataMax = max(max(yData),yDataMax);
+                if ~isempty(xData) && ~isempty(yData)
+                    xDataMax = max(max(xData),xDataMax);
+                    yDataMax = max(max(yData),yDataMax);
+                end
             end
 %             set(obj.AxH,'XLim',[0 xDataMax]);
             if obj.AUTOSCALE
                 set(obj.AxH,'YLim',[0 yDataMax]);
             else
-                set(obj.AxH,'YLim',obj.LimitY);
+               % set(obj.AxH,'YLim',obj.LimitY);
             end
+            
+            % hide the highlight on this new trace
+            set(obj.HighlightLineH,'Visible','off');
+            
         end
+        
+        function setXlim(obj,xlimits)
+            set(obj.AxH,'xlim',xlimits);
+        end
+        
         
         % get the underlying axes object (so we can link it etc...)
         function unAx = getUnAx(obj)
             unAx = obj.AxH;
+        end
+        
+        % set the highlight position
+        function setHighlight(obj,timeX)
+            set(obj.HighlightLineH,'XData',[timeX, timeX],'Visible','on');
         end
         
         function delete(obj)
@@ -172,6 +205,15 @@ classdef (Abstract) TogglingTrace < handle
                 'YData',[],...
                 'Visible','on',...
                 'color',color);
+        end
+        
+        % construct the highlight line
+        function lineH = buildHighlight(obj)
+            lineH = obj.buildLine(obj.HIGHLIGHT_COL);
+            
+            set(lineH,'XData',[0 0],'YData',get(obj.AxH,'YLim'));
+            set(lineH,'LineWidth',obj.HIGHLIGHT_WID,'Visible','off');
+            
         end
         
         function buttonH = buildButton(obj,idx,label,color)
@@ -279,10 +321,12 @@ classdef (Abstract) TogglingTrace < handle
             yMax = max(yLimits);
             
             % upper limit value
-            set(obj.LimH.upperH,'String',num2str(yMax));
+            set(obj.LimH.upperH,'String',sprintf('%.1f',yMax));
             % lower limit value
-            set(obj.LimH.lowerH,'String',num2str(yMin));
+            set(obj.LimH.lowerH,'String',sprintf('%.1f',yMin));
             
+            % highlight line
+            set(obj.HighlightLineH,'YData',yLimits);
         end
         
     end

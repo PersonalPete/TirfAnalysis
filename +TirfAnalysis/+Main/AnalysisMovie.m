@@ -121,6 +121,18 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                         smoothKernel,...
                         peakThresh(peakFacToUse(iChannel)),...
                         bgdRadiusFac);
+                    % filter based on nearest neighbour limit
+                    neighLim = obj.AnalysisSettings.getNearNeighLim;
+                    
+                    xDif = bsxfun(@minus,xPeakPos(:),xPeakPos(:)');
+                    yDif = bsxfun(@minus,yPeakPos(:),yPeakPos(:)');
+                    
+                    pairDist = hypot(xDif,yDif);
+                    
+                    nWithinDist = sum(pairDist<=neighLim,2);
+                    
+                    
+                    
                     % filter based on the ellipticity and on image widths
                     ellipticity = ...
                         min(...
@@ -131,7 +143,8 @@ classdef AnalysisMovie < TirfAnalysis.Movie.ThreeColorMovie
                     sig = mean([xPeakSig(:),yPeakSig(:)],2);
                     peakPos = peakPos(...
                         sig < filtWidMax & sig > filtWidMin & ...
-                        ellipticity > filtEllip,:);
+                        ellipticity > filtEllip & ...
+                        nWithinDist < 2,:);
                     peaksCell{iChannel} = peakPos;
                 end % if-else on nan's in movie data
             end % loop over channels

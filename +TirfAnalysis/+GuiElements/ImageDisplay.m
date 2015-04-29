@@ -24,6 +24,16 @@ classdef ImageDisplay < handle
     end
     methods (Access = public)
         function obj = ImageDisplay(figH, position)
+            % no arg syntax first
+            if nargin == 0 || isempty(figH)
+                obj.UnFig = [];
+                obj.UnAxes = [];
+                obj.UnImage = [];                
+            else
+                if iscell(figH)
+                    position = figH{2};
+                    figH = figH{1};
+                end
             obj.UnFig = figH;
             obj.UnAxes = axes('Parent',figH,...
                 'color','none',...
@@ -45,6 +55,7 @@ classdef ImageDisplay < handle
                 'CData',0,...
                 'ButtonDownFcn',@(~,~) obj.zoomHandler);
             % CData is the actual image data
+            end
         end
         function setImData(obj,imData)
             set(obj.UnImage,'CData',imData);
