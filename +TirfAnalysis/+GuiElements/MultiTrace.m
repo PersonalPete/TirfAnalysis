@@ -9,6 +9,8 @@ classdef MultiTrace < handle
         PosTrace
         
         LimitListeners
+        
+        OriginalLimX = [0 1]
     end
     
     properties (Access = protected, Constant)
@@ -66,6 +68,8 @@ classdef MultiTrace < handle
             % update the x limits
             xlimits = [0, particle.getMaxTime];
            
+            obj.OriginalLimX = xlimits;
+            
             obj.IntenTrace.setXlim(xlimits);
             obj.FretTrace.setXlim(xlimits);
             obj.FiwTrace.setXlim(xlimits);
@@ -79,6 +83,17 @@ classdef MultiTrace < handle
             obj.FretTrace.setHighlight(timeX);
             obj.FiwTrace.setHighlight(timeX);
             obj.PosTrace.setHighlight(timeX);
+        end
+        
+        % resets the x limits to the full data set
+        function resetView(obj)
+            xlimits = obj.OriginalLimX;
+            
+            obj.IntenTrace.setXlim(xlimits);
+            obj.FretTrace.setXlim(xlimits);
+            obj.FiwTrace.setXlim(xlimits);
+            obj.PosTrace.setXlim(xlimits);
+            
         end
         
         function delete(obj)

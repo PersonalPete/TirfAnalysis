@@ -56,11 +56,18 @@ classdef MovieResult % A value class
             numParticles = numel(obj.Particles);
         end
         
+        % this one is for the subclass with multiple movies, for this
+        % class, if present n = 1.
         function numInMovie = getNumInMovie(obj,n)
             if nargin > 1 && n ~= 1
                 warning('This is not a compiled result, only one movie');
             end
             numInMovie = obj.getNumParticles;
+        end
+        
+        function movieFileName = getMovieNameForParticle(obj,particleNo)
+            movieFileName = obj.getMovieFileName(...
+                find(particleNo <= cumsum(obj.getNumInMovie),1,'first'));
         end
         
     end

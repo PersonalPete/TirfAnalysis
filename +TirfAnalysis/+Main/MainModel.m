@@ -24,6 +24,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         VERBOSE = 1
         
         ANALYSIS_FOLDER = 'tirf3Analysis'
+        TFORM_FILE = '*.tform3.mat'
     end
     
     events
@@ -70,7 +71,7 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         function success = loadTransform(obj)
             % loads a three color transform object from a file
             success = 0;
-            [file, path] = uigetfile('*.tform3.mat','Load 3 Color Transform');
+            [file, path] = uigetfile(obj.TFORM_FILE,'Load 3 Color Transform');
             if ~isempty(file) && ~all(file == 0)
                 loadData = load(fullfile(path,file));
                 tform3 = loadData.tformInfo3;

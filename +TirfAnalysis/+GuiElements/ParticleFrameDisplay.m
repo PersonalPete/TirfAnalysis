@@ -62,7 +62,7 @@ classdef ParticleFrameDisplay < handle
         
         DFT_CLIM = [100 150]
       
-        FAST_FRAME_SCROLL = 100
+        FAST_FRAME_SCROLL = 30
         
         REPEAT_PAUSE = 0.1
     end
@@ -180,8 +180,6 @@ classdef ParticleFrameDisplay < handle
             obj.updateDisplay;
 
         end
-        
-        
         
         % checking what frame time is shown on the displays
         function currentFrameTime = getDisplayFrameTime(obj)

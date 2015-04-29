@@ -59,7 +59,7 @@ classdef Particle % A value class
             % fitResults = {dd,dt,da,tt,ta,aa} (same for imData)
             % frameTimes = {green, red, nir}
             if nargin == 0
-                % no-arg constructor, used for initialising
+                % no-arg constructor, used for initialising arrays
                 obj.GreenFrameTime = [];
                 obj.RedFrameTime = [];
                 obj.NirFrameTime = [];
