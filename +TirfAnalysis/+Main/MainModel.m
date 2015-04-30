@@ -11,6 +11,8 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
         ParCluster
         Jobs
         LastStatus
+        
+        JobTimer
     end
     
     properties (Constant = true)
@@ -63,6 +65,11 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             % startup the parallel cluster
             obj.ParCluster = parcluster(obj.DFT_PROFILE);
            
+            % timer for updating job status
+            obj.JobTimer = timer('Busymode','drop',...
+                'ExecutionMode','fixedSpacing',...
+                'Period',obj.DFT_TIMER_PERIOD,...
+                'TimerFcn',@(~,~) obj.checkJobStatus);
             
         end % constructor
         
@@ -471,6 +478,16 @@ classdef MainModel < TirfAnalysis.Main.AbstractMainModel
             end
             for iJob = 1:nJobs
                 delete(obj.Jobs(iJob));
+            end
+            
+            % stop and delete timer
+            if isvalid(obj.JobTimer)
+                try
+                    stop(obj.JobTimer)
+                catch
+                    % timer must have already stopped?
+                end
+                delete(obj.JobTimer)
             end
         end
         

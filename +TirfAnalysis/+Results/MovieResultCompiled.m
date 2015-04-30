@@ -18,8 +18,8 @@ classdef MovieResultCompiled < TirfAnalysis.Results.MovieResult
             for iMovieResult = 1:numel(movieResults)
                 % work out which particles are in each movie
                 lastDex = ...
-                    movieResults{iMovieResult}.getNumInMovie;
-                firstDex = [1, lastDex(1:end-1) +1];
+                    cumsum(movieResults{iMovieResult}.getNumInMovie);
+                firstDex = [1, (lastDex(1:end-1) + 1)];
                 for jMovie = 1:length(lastDex)
                     numOriginalMovies = numOriginalMovies + 1;
                     movieResultCell{numOriginalMovies} = ...
@@ -44,7 +44,7 @@ classdef MovieResultCompiled < TirfAnalysis.Results.MovieResult
             end
             
             lastDex = cumsum(obj.NumInEachMovie);
-            firstDex = [1, lastDex(1:end-1) + 1];
+            firstDex = [1, (lastDex(1:end-1) + 1)];
             
             obj.Particles(lastDex(numMovies)) = ...
                 TirfAnalysis.Results.Particle();
