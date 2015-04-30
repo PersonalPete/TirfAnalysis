@@ -237,8 +237,12 @@ classdef RegView < handle
         end
         
         function delete(obj)
-            obj.Controller.delete;
-            delete(obj.FigH);
+            if isvalid(obj.Controller)
+            delete(obj.Controller);
+            end
+            if ishandle(obj.FigH)
+                delete(obj.FigH);
+            end
         end
         
         function updateIm(obj,greenF, redF, nirF, greenLim, redLim, nirLim)

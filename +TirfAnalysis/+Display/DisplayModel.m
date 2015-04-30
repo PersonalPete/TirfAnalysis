@@ -53,7 +53,7 @@ classdef DisplayModel < handle
             if ~isempty(file) && all(file~=0)
                 savePath = fullfile(path,file);
                 movieResult = obj.MovieResults;
-                save(savePath,movieResult);
+                save(savePath,'movieResult');
                 success = 1;
             end
         end

@@ -2,6 +2,8 @@ classdef DisplayView < handle
     properties (Access = protected)
         FigH
         
+        Controller
+        
         TraceH
         ImagesH
         
@@ -22,6 +24,8 @@ classdef DisplayView < handle
         
         ZoomButton
         
+        ExportButton
+        
     end
     
     properties (Access = protected, Constant)
@@ -39,9 +43,11 @@ classdef DisplayView < handle
         POS_LOAD = [0.05 0.925 0.10 0.05]
         POS_SAVE = [0.15 0.925 0.10 0.05]
         
-        POS_INFO = [0.25 0.925 0.35 0.035]
+        POS_INFO = [0.25 0.925 0.325 0.035]
         
-        POS_ZOOM = [0.60 0.925 0.075 0.05]
+        POS_ZOOM = [0.6375 0.925 0.050 0.05]
+        
+        POS_EXPO = [0.575  0.925 0.050 0.05]
         
         % Uicontol colors
         COL_STR_BGD = [0.20 0.20 0.20]
@@ -60,9 +66,11 @@ classdef DisplayView < handle
     
     methods (Access = public)
         % constructor
-        function obj = DisplayView(callbacks)
+        function obj = DisplayView(controller,callbacks)
             
-            if nargin < 1
+            obj.Controller = controller;
+            
+            if nargin < 2
                 callbacks = {'','','','',''};
             end
             
@@ -124,6 +132,10 @@ classdef DisplayView < handle
             % the zoom toggle button
             obj.ZoomButton = obj.buildToggle(obj.POS_ZOOM,'Zoom',...
                 @(src,~) obj.zoomToggle(src));
+            
+            obj.ExportButton = ...
+                TirfAnalysis.GuiElements.ImageExportButton(...
+                obj.FigH,obj.POS_EXPO);
         end
         
         function displayParticle(obj,particle)
@@ -140,10 +152,10 @@ classdef DisplayView < handle
         end
         
         function delete(obj)
-            if ishandle(obj.TraceH)
+            if isvalid(obj.TraceH)
                 delete(obj.TraceH)
             end
-            if ishandle(obj.ImagesH)
+            if isvalid(obj.ImagesH)
                 delete(obj.ImagesH)
             end
             if ishandle(obj.FigH)
@@ -151,6 +163,9 @@ classdef DisplayView < handle
             end
             if ishandle(obj.HighlightListener)
                 delete(obj.HighlightListener);
+            end
+            if isvalid(obj.Controller)
+                delete(obj.Controller)
             end
         end
     end

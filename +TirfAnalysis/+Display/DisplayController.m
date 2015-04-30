@@ -20,7 +20,7 @@ classdef DisplayController < handle
             callbacks{4} = @(~,~) obj.Model.loadAnalysis;
             callbacks{5} = @(~,~) obj.Model.saveAnalysis;
             
-            obj.View = TirfAnalysis.Display.DisplayView(callbacks);
+            obj.View = TirfAnalysis.Display.DisplayView(obj,callbacks);
             
             obj.UpdateListener = addlistener(obj.Model,...
                 'DisplayNeedsUpdate',@(~,~) obj.updateDisplayToMatchModel);
@@ -30,12 +30,8 @@ classdef DisplayController < handle
         
         
         function delete(obj)
-            if ishandle(obj.Model)
+            if isvalid(obj.Model)
                 delete(obj.Model)
-            end
-            
-            if ishandle(obj.View)
-                delete(obj.View);
             end
             
             if ishandle(obj.UpdateListener)

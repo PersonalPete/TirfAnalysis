@@ -173,7 +173,7 @@ classdef ParticleFrameDisplay < handle
 
             obj.CurrentData = currentData;
             obj.ChannelLengths = channelLengths;
-            obj.CurrentFrame = 1;
+            obj.CurrentFrame = 2;
             obj.DisplayTimes = displayTimes;
             
             % update the displays

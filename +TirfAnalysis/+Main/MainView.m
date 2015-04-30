@@ -257,7 +257,9 @@ classdef MainView < handle
         
         function delete(obj)
             delete(obj.FigH);
-            delete(obj.Controller);
+            if isvalid(obj.Controller)
+                delete(obj.Controller);
+            end
         end
     end
     
