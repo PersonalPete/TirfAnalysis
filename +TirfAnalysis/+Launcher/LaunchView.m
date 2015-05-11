@@ -10,7 +10,7 @@ classdef LaunchView < handle
     end
     
     properties (Access = protected, Constant)
-        FIG_POS = [0.3 0.4 0.4 0.2]
+        FIG_POS = [0.3 0.400 0.400 0.200]
         
         REG_POS = [0.05 0.3 0.25 0.4]
         ANA_POS = [0.375 0.3 0.25 0.4]

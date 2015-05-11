@@ -32,7 +32,8 @@ classdef (Sealed) LaunchController < handle
         end
         function launchViwCon(obj)
             if isempty(obj.ViwCon) || ~isvalid(obj.ViwCon)
-                obj.ViwCon = TirfAnalysis.Display.DisplayController;
+                % obj.ViwCon = TirfAnalysis.Display.DisplayController;
+                obj.ViwCon = TirfAnalysis.Display.Tagger.TagController;
             end
         end
     end

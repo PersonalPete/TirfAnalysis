@@ -52,13 +52,13 @@ classdef ImageExportButton < handle
             
             if ~isempty(file) && ~all(file == 0) && filterspec ~= 3 
                 savePath = fullfile(path,file);
-                % set the colormap to defautl
-                cmap = get(obj.FigH,'colormap');
-                set(obj.FigH,'colormap','default');
+                % set the colormap to defaut
+%                 cmap = get(obj.FigH,'colormap');
+%                 set(obj.FigH,'colormap','default');
                 % save the figure
-                saveas(obj.FigH,savePath);
+                saveas(obj.FigH,savePath,'epsc');
                 % reset the colormap
-                set(obj.FigH,'colormap',cmap);
+%                 set(obj.FigH,'colormap',cmap);
             end
         end
     end
