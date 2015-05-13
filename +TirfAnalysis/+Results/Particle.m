@@ -134,8 +134,8 @@ classdef Particle % A value class
                 obj.AaFit = fitResults{6};
                 
                 obj.DdImageData = imData{1};
-                obj.DaImageData = imData{2};
-                obj.DtImageData = imData{3};
+                obj.DtImageData = imData{2};
+                obj.DaImageData = imData{3};
                 obj.TtImageData = imData{4};
                 obj.TaImageData = imData{5};
                 obj.AaImageData = imData{6};
@@ -212,27 +212,27 @@ classdef Particle % A value class
         
         % getters for derived quantities i.e. intensity or mean image width
         function [dd, frameTime] = getDd(obj)
-            dd = obj.getIntensity(@obj.getDdFit);
+            dd = obj.getIntensityInternal(@obj.getDdFit);
             frameTime = obj.getGreenFrameTime;
         end
         function [dt, frameTime] = getDt(obj)
-            dt = obj.getIntensity(@obj.getDtFit);
+            dt = obj.getIntensityInternal(@obj.getDtFit);
             frameTime = obj.getGreenFrameTime;
         end
         function [da, frameTime] = getDa(obj)
-            da = obj.getIntensity(@obj.getDaFit);
+            da = obj.getIntensityInternal(@obj.getDaFit);
             frameTime = obj.getGreenFrameTime;
         end
         function [tt, frameTime] = getTt(obj)
-            tt = obj.getIntensity(@obj.getTtFit);
+            tt = obj.getIntensityInternal(@obj.getTtFit);
             frameTime = obj.getRedFrameTime;
         end
         function [ta, frameTime] = getTa(obj)
-            ta = obj.getIntensity(@obj.getTaFit);
+            ta = obj.getIntensityInternal(@obj.getTaFit);
             frameTime = obj.getRedFrameTime;
         end
         function [aa, frameTime] = getAa(obj)
-            aa = obj.getIntensity(@obj.getAaFit);
+            aa = obj.getIntensityInternal(@obj.getAaFit);
             frameTime = obj.getNirFrameTime;
         end
         
@@ -295,6 +295,90 @@ classdef Particle % A value class
             tform3 = obj.Tform3;
         end
         
+        % for (neatly) getting intensity
+        function [intensity, frameTime] = getIntensity(obj,channelString)
+            % [intensity, frameTime] = ...
+            %       particle.getIntensity(obj,channelString)
+            % where channelString = 'DD','DT','DA','TT','TA','AA'
+            if numel(obj) > 1
+                intensity = cell(size(obj));
+                frameTime = cell(size(obj));
+            end
+            for iObj = 1:numel(obj)
+                thisObj = obj(iObj);
+                
+                % parse the input string
+                if strcmpi(channelString,'dd')
+                    [thisIntensity, thisFrameTime] = thisObj.getDd;
+                elseif strcmpi(channelString,'dt')
+                    [thisIntensity, thisFrameTime] = thisObj.getDt;
+                elseif strcmpi(channelString,'da')
+                    [thisIntensity, thisFrameTime] = thisObj.getDa;
+                elseif strcmpi(channelString,'tt')
+                    [thisIntensity, thisFrameTime] = thisObj.getTt;
+                elseif strcmpi(channelString,'ta')
+                    [thisIntensity, thisFrameTime] = thisObj.getTa;
+                elseif strcmpi(channelString,'aa')
+                    [thisIntensity, thisFrameTime] = thisObj.getAa;
+                else
+                    thisIntensity = [];
+                    thisFrameTime = [];
+                end
+                
+                % if we queried multiple objects, then return a cell array
+                if numel(obj) > 1
+                    intensity{iObj} = thisIntensity;
+                    frameTime{iObj} = thisFrameTime;
+                else
+                    intensity = thisIntensity;
+                    frameTime = thisFrameTime;
+                end
+            end
+        end
+        
+        % for getting FRET
+        function [fret, frameTime] = getFret(obj,channelString)
+            % [fret, frameTime] = particle.getFret(channelString)
+            % channelString = 'DT', 'DA', or 'TA' to specify which FRET to
+            % query
+            if numel(obj) > 1
+                fret = cell(size(obj));
+                frameTime = cell(size(obj));
+            end
+            % then loop over the objects queried
+            for iObj = 1:numel(obj)
+                thisObj = obj(iObj);
+                % parse the input string
+                if strcmpi(channelString,'dt')
+                    [donor, thisFrameTime] = thisObj.getDd;
+                    acceptor = thisObj.getDt;
+                    thisFret = acceptor./(donor + acceptor);
+                elseif strcmpi(channelString,'da')
+                    [donor, thisFrameTime] = thisObj.getDd;
+                    acceptor = thisObj.getDa;
+                    thisFret = acceptor./(donor + acceptor);
+                elseif strcmpi(channelString,'ta')
+                    [donor, thisFrameTime] = thisObj.getTt;
+                    acceptor = thisObj.getTa;
+                    thisFret = acceptor./(donor + acceptor);
+                else
+                    thisFret = [];
+                    thisFrameTime = [];
+                end
+                % if we queried multiple objects, then return a cell array
+                if numel(obj) > 1
+                    fret{iObj} = thisFret;
+                    frameTime{iObj} = thisFrameTime;
+                else
+                    fret = thisFret;
+                    frameTime = thisFrameTime;
+                end
+            end
+            
+            
+            
+        end
+        
         % for interpreting distance
         function [distance, time] = getDistance(obj,arg1,arg2)
             % syntax is 
@@ -307,7 +391,8 @@ classdef Particle % A value class
             % [distance, time] = ...
             % obj.getDistance(channel1,channel2)
             % returns the distance between each channel at each of
-            % channel1's frame times. channel1 = 'DD' etc...
+            % channel1's frame times. channel1 = 'DD', 'DA', 'AA' ...
+            % and channel2 = 'DD', 'DA' ...
             %
             if nargin < 3 || ~ischar(arg2)
                 % use the averaging syntax
@@ -369,7 +454,7 @@ classdef Particle % A value class
     
     methods (Access = protected)
         % convenience function for accessing derived quantities from fits
-        function intensity = getIntensity(obj,fitGetFcn)
+        function intensity = getIntensityInternal(obj,fitGetFcn)
             fitResult = fitGetFcn();
             if obj.IsEllipse
                 intensity = 2*pi*prod(fitResult(:,1:3),2);

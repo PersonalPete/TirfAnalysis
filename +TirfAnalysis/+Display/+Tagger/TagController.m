@@ -4,12 +4,14 @@ classdef TagController < handle
     properties (Access = protected)
         Model
         View
+        TagView
         UpdateListener
     end
     
     methods (Access = public)
         % constructor
         function obj = TagController
+            % use the model that accepts the tagger here
             obj.Model = TirfAnalysis.Display.Tagger.TagModel();
             
             % make the callbacks
@@ -21,10 +23,14 @@ classdef TagController < handle
             callbacks{4} = @(~,~) obj.Model.loadAnalysis;
             callbacks{5} = @(~,~) obj.Model.saveAnalysis;
             
-            callbacks{6} = @(tagNames,tagValues) ...
-                obj.setTagModelToMatchDisplay(tagNames,tagValues);
+            % build the main window
+            obj.View = TirfAnalysis.Display.DisplayView(obj,callbacks);
             
-            obj.View = TirfAnalysis.Display.Tagger.TagView(obj,callbacks);
+            % build the tagger window
+            obj.TagView = ...
+                TirfAnalysis.Display.Tagger.TagPanel(...
+                @(tagNames,tagValues) ...
+                obj.setTagModelToMatchDisplay(tagNames,tagValues));
             
             obj.UpdateListener = addlistener(obj.Model,...
                 'DisplayNeedsUpdate',@(~,~) obj.updateDisplayToMatchModel);
@@ -32,13 +38,16 @@ classdef TagController < handle
         
          function delete(obj)
             if isvalid(obj.Model)
-                delete(obj.Model)
+                delete(obj.Model);
             end
             
             if ishandle(obj.UpdateListener)
                 delete(obj.UpdateListener);
             end
              
+            if isvalid(obj.TagView)
+                delete(obj.TagView);
+            end
         end
         
     end
@@ -52,7 +61,7 @@ classdef TagController < handle
                 obj.Model.getCurrentParticleNumber);
             
             % the updater for the tag information
-            obj.View.updateTagDisplay(...
+            obj.TagView.setTagDisplay(...
                 obj.Model.getTagNames,obj.Model.getTagValues);
             
         end
