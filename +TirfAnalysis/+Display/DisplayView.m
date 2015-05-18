@@ -9,7 +9,7 @@ classdef DisplayView < handle
         
         HighlightListener
         
-        % buttons for navigating hte data
+        % buttons for navigating the data
         NextButton
         BackButton
         

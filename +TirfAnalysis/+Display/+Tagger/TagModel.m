@@ -58,6 +58,23 @@ classdef TagModel < TirfAnalysis.Display.DisplayModel
                 [file, path] = ...
                     uiputfile(obj.COMPILED_FILE,'Save Compiled Files','');
             if ~isempty(file) && all(file~=0)
+                
+                % cut the extension just to eg: '.fitsCompiled'
+                strippedExtension = obj.COMPILED_FILE(2:end-4);
+                
+                multipleExtensions = ...
+                    strfind(file,strippedExtension);
+                
+                if numel(multipleExtensions) > 1
+                    for ext = (numel(multipleExtensions) - 1):-1:1
+                        % remove the duplicates
+                        file(...
+                            multipleExtensions(ext):...
+                            multipleExtensions(ext) + ...
+                            numel(strippedExtension) - 1) = [];
+                    end
+                end
+                
                 savePath = fullfile(path,file);
                 movieResult = obj.MovieResults;
                 % also save the tag information

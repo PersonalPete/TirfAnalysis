@@ -155,7 +155,11 @@ classdef (Abstract) TogglingTrace < handle
             end
 %             set(obj.AxH,'XLim',[0 xDataMax]);
             if obj.AUTOSCALE
-                set(obj.AxH,'YLim',[0 yDataMax]);
+                try
+                    set(obj.AxH,'YLim',[0 yDataMax*1.1]);
+                catch
+                    % couldn't autoscale
+                end
             else
                % set(obj.AxH,'YLim',obj.LimitY);
             end
