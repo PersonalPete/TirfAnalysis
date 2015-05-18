@@ -1,5 +1,6 @@
 classdef MultiChannelImageDisplay < handle
     % MultiChannelImageDisplay displays 3-color image data
+    % DISPLAYS WHOLE IMAGE
     
     properties (Access = protected)
         DdIm

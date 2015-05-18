@@ -3,6 +3,7 @@ classdef DisplayModel < handle
     properties (Access = protected)
         MovieResults % this is a compiled movie result for multiple movies
         CurrentParticle
+        MovieLoaded
     end
     
     properties (Access = protected, Constant)
@@ -19,6 +20,7 @@ classdef DisplayModel < handle
         function obj = DisplayModel()
             obj.MovieResults = TirfAnalysis.Results.MovieResult();
             obj.CurrentParticle = 1;
+            obj.MovieLoaded = 0;
         end
         
         % loading and saving analysis data
@@ -48,14 +50,15 @@ classdef DisplayModel < handle
         
         function success = saveAnalysis(obj)
             success = 0;
-                [file, path] = ...
-                    uiputfile(obj.COMPILED_FILE,'Save Compiled Files','');
+            [file, path] = ...
+                uiputfile(obj.COMPILED_FILE,'Save Compiled Files','');
             if ~isempty(file) && all(file~=0)
                 savePath = fullfile(path,file);
                 movieResult = obj.MovieResults;
                 save(savePath,'movieResult','-v7.3');
                 % save in a R2006b or later format '-v7.3';
                 success = 1;
+                obj.MovieLoaded = 1;
             end
         end
         
@@ -67,19 +70,25 @@ classdef DisplayModel < handle
             obj.CurrentParticle = min(obj.CurrentParticle + 1,maxParticle);
             % notify any displays that are listening that they need to
             % update
-            notify(obj,'DisplayNeedsUpdate');
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
         end
         
         function previousParticle(obj)
             obj.CurrentParticle = max(1,obj.CurrentParticle - 1);
-            notify(obj,'DisplayNeedsUpdate');
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
         end
         
         function specificParticle(obj,particleNumber)
             maxParticle = obj.MovieResults.getNumParticles();
             obj.CurrentParticle = min(particleNumber,maxParticle);
             obj.CurrentParticle = round(max(obj.CurrentParticle,1));
-            notify(obj,'DisplayNeedsUpdate');
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
         end
         
         % getters for retreiving model state
@@ -99,4 +108,3 @@ classdef DisplayModel < handle
     end
 end
 
-            

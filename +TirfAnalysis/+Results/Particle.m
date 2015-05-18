@@ -171,7 +171,7 @@ classdef Particle % A value class
         function fitParamNames = getFitParamNames(obj)
             fitParamNames = obj.FitParamNames;
         end
-
+        
         function ddFit = getDdFit(obj)
             ddFit = obj.DdFit;
         end
@@ -381,13 +381,13 @@ classdef Particle % A value class
         
         % for interpreting distance
         function [distance, time] = getDistance(obj,arg1,arg2)
-            % syntax is 
+            % syntax is
             % [distance, time] = ...
             % obj.getDistance(channelString,averageFrames)
             % where channelString is e.g. 'DD' or 'TT' and averageFrames is
             % the number of frames to average over for the starting
             % position
-            % 
+            %
             % [distance, time] = ...
             % obj.getDistance(channel1,channel2)
             % returns the distance between each channel at each of
@@ -437,7 +437,7 @@ classdef Particle % A value class
                         pos2Interp(:,1) - pos1(:,1),...
                         pos2Interp(:,2) - pos1(:,2));
                     time = time1;
-                end                
+                end
             end
             
             
@@ -456,26 +456,38 @@ classdef Particle % A value class
         % convenience function for accessing derived quantities from fits
         function intensity = getIntensityInternal(obj,fitGetFcn)
             fitResult = fitGetFcn();
-            if obj.IsEllipse
-                intensity = 2*pi*prod(fitResult(:,1:3),2);
+            if isempty(fitResult)
+                intensity = [];
             else
-                intensity = 2*pi*prod(fitResult(:,1:2),2).*fitResult(:,2);
+                if obj.IsEllipse
+                    intensity = 2*pi*prod(fitResult(:,1:3),2);
+                else
+                    intensity = 2*pi*prod(fitResult(:,1:2),2).*fitResult(:,2);
+                end
             end
-        end  
+        end
         function width = getWidth(obj,fitGetFcn)
             fitResult = fitGetFcn();
-            if obj.IsEllipse
-                width = mean(fitResult(:,2:3),2);
+            if isempty(fitResult)
+                width = [];
             else
-                width = fitResult(:,2);
+                if obj.IsEllipse
+                    width = mean(fitResult(:,2:3),2);
+                else
+                    width = fitResult(:,2);
+                end
             end
         end
         function position = getPosition(obj,fitGetFcn)
             fitResult = fitGetFcn();
-            if obj.IsEllipse
-                position = fitResult(:,5:6);
+            if isempty(fitResult)
+                position = [];
             else
-                position = fitResult(:,4:5);
+                if obj.IsEllipse
+                    position = fitResult(:,5:6);
+                else
+                    position = fitResult(:,4:5);
+                end
             end
         end
         
@@ -500,4 +512,3 @@ classdef Particle % A value class
         end
     end
 end
-            

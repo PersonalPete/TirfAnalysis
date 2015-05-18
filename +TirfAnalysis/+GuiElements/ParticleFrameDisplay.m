@@ -13,6 +13,8 @@ classdef ParticleFrameDisplay < handle
         LowerLimH
         UpperLimH
         
+        DisplayTime
+        
         % the info currently display(able) in the images
         CurrentData
         ChannelLengths
@@ -131,14 +133,19 @@ classdef ParticleFrameDisplay < handle
             % make the controls for changing the image limits
             
             posLower = [pos(1) + 0*butStepX, pos(2),...
-                2*butStepX, posButStep/2];
-            posUpper = [pos(1) + 2*butStepX, pos(2),...
-                2*butStepX, posButStep/2];
+                4*butStepX/3, posButStep/2];
+            posUpper = [pos(1) + (8/3)*butStepX, pos(2),...
+                4*butStepX/3, posButStep/2];
             
             obj.LowerLimH = obj.addEdit(posLower,@(~,~) obj.updateClim);
             set(obj.LowerLimH,'string',sprintf('%i',obj.DFT_CLIM(1)));
             obj.UpperLimH = obj.addEdit(posUpper,@(~,~) obj.updateClim);
             set(obj.UpperLimH,'string',sprintf('%i',obj.DFT_CLIM(2)));
+            
+            posTime = [pos(1) + (4/3)*butStepX, pos(2),...
+                4*butStepX/3, posButStep/3];
+            
+            obj.DisplayTime = obj.addText(posTime);            
         end
         
         % put a new particle's data in the displays
@@ -178,7 +185,6 @@ classdef ParticleFrameDisplay < handle
             
             % update the displays
             obj.updateDisplay;
-
         end
         
         % checking what frame time is shown on the displays
@@ -204,6 +210,7 @@ classdef ParticleFrameDisplay < handle
                 'Min',0,...
                 'Max',1);
         end
+        % add an edit handle
         function editH = addEdit(obj,pos,callback)
             editH = uicontrol('Parent',obj.FigH,...
                 'style','edit',...
@@ -217,6 +224,21 @@ classdef ParticleFrameDisplay < handle
                 'callback',callback);
         end
         
+        % add a string
+        function textH = addText(obj,pos)
+            textH = uicontrol('Style','Text',...
+                'Parent',obj.FigH,...
+                'String','',...
+                'Units','Normalized',...
+                'Position',pos,...
+                'BackgroundColor',get(obj.FigH,'Color'),...
+                'ForegroundColor',obj.COL_STR_TXT,...
+                'FontUnits','Normalized',...
+                'FontSize',obj.TXT_SIZE * (2/3),...
+                'Visible','on');      
+        end
+        
+        % build the channel description
         function descH = makeDesc(obj,pos,string,color)
             descH = uicontrol('Style','Text',...
                 'Parent',obj.FigH,...
@@ -257,6 +279,12 @@ classdef ParticleFrameDisplay < handle
             
         end
         
+        % update the time display string
+        function updateTimeDisplay(obj)
+            time = obj.DisplayTimes(obj.CurrentFrame);
+            set(obj.DisplayTime,'string',sprintf('%.2f s',time));
+        end
+        
         % update the displayed data (i.e. the frame displayed changed)
         function updateDisplay(obj)
             currentFrame = obj.CurrentFrame;
@@ -273,6 +301,9 @@ classdef ParticleFrameDisplay < handle
                 end
                 
             end
+            
+            obj.updateTimeDisplay;
+            
             obj.updateClim;
             notify(obj,'DisplayFrameChanged');
         end

@@ -50,7 +50,8 @@ classdef LaunchView < handle
                 'Toolbar','none',...
                 'Menubar','none',...
                 'WindowStyle','normal',...
-                'Visible','on');
+                'Visible','on',...
+                'DefaultAxesHandleVisibility','Callback');
             
             obj.RegButton = obj.buildButton(obj.REG_POS,...
                 'Register Images',launchReg);
@@ -58,7 +59,16 @@ classdef LaunchView < handle
                 'Analyse Movies',launchAnalysis);
             obj.ViewerButton = obj.buildButton(obj.VIW_POS,...
                 'View Trajectories',launchViewer);
+           
+            set(obj.FigH,'HandleVisibility','Callback');
             
+        end
+        
+        % for making sure we can see it
+        function setVisible(obj)
+            set(obj.FigH,'Position',obj.FIG_POS,...
+                'Visible','on');
+            uistack(obj.FigH,'top');
         end
         
         function delete(obj)

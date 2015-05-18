@@ -36,6 +36,12 @@ classdef (Sealed) LaunchController < handle
                 obj.ViwCon = TirfAnalysis.Display.Tagger.TagController;
             end
         end
+        
+        % make the window visible and active
+        function setVisible(obj)
+            obj.View.setVisible;
+        end
+        
     end
     
     methods (Access = public)
@@ -55,6 +61,8 @@ classdef (Sealed) LaunchController < handle
                     TirfAnalysis.Launcher.LaunchController();
             end
             singleController = localLaunchController;
+            % make sure it is in an obvious position
+            localLaunchController.setVisible;
         end
     end
 end

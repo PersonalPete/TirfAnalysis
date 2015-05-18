@@ -10,7 +10,9 @@ classdef TagModel < TirfAnalysis.Display.DisplayModel
     methods (Access = public)
         % constructor
         function obj = TagModel
-           % just uses superclass constructor with no args 
+            % just uses superclass constructor with no args
+            obj.TagInfo = TirfAnalysis.Display.Tagger.TagInformation(...
+                obj.MovieResults);
         end
         
         % @Override from DisplayModel
@@ -35,7 +37,7 @@ classdef TagModel < TirfAnalysis.Display.DisplayModel
                     TirfAnalysis.Results.MovieResultCompiled(movieResults);
                 obj.CurrentParticle = 1;
                 success = 1;
-                
+                obj.MovieLoaded = 1;
                 
                 % if it is a single file loaded, then we can check if it has
                 % already been tagged
@@ -49,14 +51,16 @@ classdef TagModel < TirfAnalysis.Display.DisplayModel
                 end
             end
             
-            notify(obj,'DisplayNeedsUpdate');
-
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
+            
         end
         
         function success = saveAnalysis(obj)
             success = 0;
-                [file, path] = ...
-                    uiputfile(obj.COMPILED_FILE,'Save Compiled Files','');
+            [file, path] = ...
+                uiputfile(obj.COMPILED_FILE,'Save Compiled Files','');
             if ~isempty(file) && all(file~=0)
                 
                 % cut the extension just to eg: '.fitsCompiled'
@@ -97,13 +101,16 @@ classdef TagModel < TirfAnalysis.Display.DisplayModel
         % setters for the tagging
         function setTagNames(obj,tagNames)
             obj.TagInfo.setTagDescs(tagNames);
-            notify(obj,'DisplayNeedsUpdate');
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
         end
         
         function setTagValue(obj,tags)
             obj.TagInfo.setTagValue(obj.CurrentParticle,tags);
-            notify(obj,'DisplayNeedsUpdate');
+            if obj.MovieLoaded
+                notify(obj,'DisplayNeedsUpdate');
+            end
         end
     end
 end
-        

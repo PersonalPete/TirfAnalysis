@@ -65,7 +65,8 @@ classdef TagPanel < handle
                 'Toolbar','none',...
                 'Menubar','none',...
                 'WindowStyle','normal',...
-                'Visible','on');
+                'Visible','on',...
+                'DefaultAxesHandleVisibility','Callback');
             
             % build the buttons for adding or removing a tag
             obj.NumTags = 0;
@@ -78,6 +79,8 @@ classdef TagPanel < handle
                 'Add',@obj.addTagRequested);
             obj.DeleteButton = obj.buildButton(obj.DEL_POS,...
                 'Remove',@obj.delTagRequested);
+            
+            set(obj.FigH,'HandleVisibility','callback');
         end
         
         % set the tag display to match the model
